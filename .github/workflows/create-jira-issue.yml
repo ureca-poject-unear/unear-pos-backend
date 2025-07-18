@@ -62,8 +62,8 @@ jobs:
         id: map-issue-type
         run: |
           case "${{ steps.issue-parser.outputs.issueparser_issueType }}" in
-            "Epic") echo "jira_type=epic" >> $GITHUB_OUTPUT ;;
-            "작업 (Task)") echo "jira_type=작업" >> $GITHUB_OUTPUT ;;
+            "에픽") echo "jira_type=에픽" >> $GITHUB_OUTPUT ;;
+            "작업") echo "jira_type=작업" >> $GITHUB_OUTPUT ;;
             *) echo "jira_type=작업" >> $GITHUB_OUTPUT ;;
           esac
 
@@ -88,7 +88,7 @@ jobs:
               echo "sprint_id=" >> $GITHUB_OUTPUT
               echo "has_sprint=false" >> $GITHUB_OUTPUT
               ;;
-            "(백엔드)WL7_1_스프린트")
+            "(백엔드)WL7_1")
               echo "sprint_id=40" >> $GITHUB_OUTPUT
               echo "has_sprint=true" >> $GITHUB_OUTPUT
               ;;
