@@ -62,9 +62,9 @@ jobs:
         id: map-issue-type
         run: |
           case "${{ steps.issue-parser.outputs.issueparser_issueType }}" in
-            "Epic") echo "jira_type=Epic" >> $GITHUB_OUTPUT ;;
-            "작업 (Task)") echo "jira_type=Task" >> $GITHUB_OUTPUT ;;
-            *) echo "jira_type=Task" >> $GITHUB_OUTPUT ;;
+            "Epic") echo "jira_type=에픽" >> $GITHUB_OUTPUT ;;
+            "작업 (Task)") echo "jira_type=작업" >> $GITHUB_OUTPUT ;;
+            *) echo "jira_type=작업" >> $GITHUB_OUTPUT ;;
           esac
 
       - name: Map priority to Jira
@@ -208,7 +208,7 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           issue-number: ${{ github.event.issue.number }}
           body: |
-            ## Jira Issue Created
+            ## 🎟️ Jira Issue Created
             
             **Issue:** [${{ steps.create.outputs.issue }}](${{ secrets.JIRA_BASE_URL }}/browse/${{ steps.create.outputs.issue }})
             **Type:** ${{ steps.map-issue-type.outputs.jira_type }}
