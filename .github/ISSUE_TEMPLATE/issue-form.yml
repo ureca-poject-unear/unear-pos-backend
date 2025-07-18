@@ -1,0 +1,70 @@
+name: '이슈 생성'
+description: 'Repo에 이슈를 생성하며, 생성된 이슈는 Jira와 연동됩니다.'
+labels: [feat]
+title: '이슈 이름을 작성해주세요'
+body:
+  - type: dropdown
+    id: issueparser_issueType
+    attributes:
+      label: '이슈 타입 (Issue Type)'
+      description: '생성할 이슈의 타입을 선택해주세요'
+      options:
+        - Epic
+        - 작업 (Task)
+    validations:
+      required: true
+
+  - type: dropdown
+    id: issueparser_sprint
+    attributes:
+      label: '스프린트 (Sprint)'
+      description: '할당할 스프린트를 선택해주세요'
+      options:
+        - (백엔드)WL7_1_스프린트
+        - 스프린트 미할당
+    validations:
+      required: true
+
+  - type: input
+    id: issueparser_parentKey
+    attributes:
+      label: '상위 작업 (Parent Issue)'
+      placeholder: 'WL7-123'
+      description: '상위 작업의 Ticket Number를 WL7-XXX 형식으로 기입해주세요 (선택사항)'
+    validations:
+      required: false
+
+  - type: input
+    id: issueparser_description
+    attributes:
+      label: '상세 내용 (Description)'
+      description: '이슈에 대해서 간략히 설명해주세요'
+    validations:
+      required: true
+
+  - type: textarea
+    id: issueparser_tasks
+    attributes:
+      label: '체크리스트 (Tasks)'
+      description: '해당 이슈에 대해 필요한 작업목록을 작성해주세요'
+      value: |
+        - [ ] Task 1
+        - [ ] Task 2
+        - [ ] Task 3
+    validations:
+      required: true
+
+  - type: dropdown
+    id: issueparser_priority
+    attributes:
+      label: '우선순위 (Priority)'
+      description: '이슈의 우선순위를 선택해주세요'
+      options:
+        - Highest
+        - High
+        - Medium
+        - Low
+        - Lowest
+      default: 2
+    validations:
+      required: true
