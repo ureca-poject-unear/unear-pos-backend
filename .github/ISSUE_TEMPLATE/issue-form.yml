@@ -9,8 +9,8 @@ body:
       label: '이슈 타입 (Issue Type)'
       description: '생성할 이슈의 타입을 선택해주세요'
       options:
-        - Epic
-        - 작업 (Task)
+        - 에픽
+        - 작업
     validations:
       required: true
 
@@ -20,7 +20,7 @@ body:
       label: '스프린트 (Sprint)'
       description: '할당할 스프린트를 선택해주세요'
       options:
-        - (백엔드)WL7_1_스프린트
+        - (백엔드)WL7_1
         - 스프린트 미할당
     validations:
       required: true
@@ -41,19 +41,7 @@ body:
       description: '이슈에 대해서 간략히 설명해주세요'
     validations:
       required: true
-
-  - type: textarea
-    id: issueparser_tasks
-    attributes:
-      label: '체크리스트 (Tasks)'
-      description: '해당 이슈에 대해 필요한 작업목록을 작성해주세요'
-      value: |
-        - [ ] Task 1
-        - [ ] Task 2
-        - [ ] Task 3
-    validations:
-      required: true
-
+      
   - type: dropdown
     id: issueparser_priority
     attributes:
@@ -68,3 +56,16 @@ body:
       default: 2
     validations:
       required: true
+      
+  - type: textarea
+    id: issueparser_tasks
+    attributes:
+      label: '체크리스트 (Tasks)'
+      description: '해당 이슈에 대해 필요한 작업목록을 작성해주세요'
+      value: |
+        - [ ] Task 1
+
+    validations:
+      required: true
+
+
