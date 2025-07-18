@@ -62,7 +62,7 @@ jobs:
         id: map-issue-type
         run: |
           case "${{ steps.issue-parser.outputs.issueparser_issueType }}" in
-            "Epic") echo "jira_type=에픽" >> $GITHUB_OUTPUT ;;
+            "Epic") echo "jira_type=epic" >> $GITHUB_OUTPUT ;;
             "작업 (Task)") echo "jira_type=작업" >> $GITHUB_OUTPUT ;;
             *) echo "jira_type=작업" >> $GITHUB_OUTPUT ;;
           esac
