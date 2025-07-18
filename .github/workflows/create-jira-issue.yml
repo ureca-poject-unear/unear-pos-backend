@@ -1,0 +1,219 @@
+name: Create Jira issue
+on:
+  issues:
+    types:
+      - opened
+
+# 각 레포별 설정값 (레포마다 이 값들을 수정해주세요)
+env:
+  REPO_GUBUN: "백엔드"  # 각 레포의 구분값 (예: backend, frontend, admin 등)
+  REPO_NAME: "pos"  # 각 레포의 repo 필드값
+
+jobs:
+  create-issue:
+    name: Create Jira issue
+    runs-on: ubuntu-latest
+    steps:
+      - name: Login
+        uses: atlassian/gajira-login@v3
+        env:
+          JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
+          JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+          JIRA_USER_EMAIL: ${{ secrets.JIRA_USER_EMAIL }}
+
+      - name: Checkout main code
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Issue Parser
+        uses: stefanbuck/github-issue-praser@v3
+        id: issue-parser
+        with:
+          template-path: .github/ISSUE_TEMPLATE/issue-form.yml
+
+      - name: Log Issue Parser
+        run: |
+          echo 'issueType: ${{ steps.issue-parser.outputs.issueparser_issueType }}'
+          echo 'sprint: ${{ steps.issue-parser.outputs.issueparser_sprint }}'
+          echo 'parentKey: ${{ steps.issue-parser.outputs.issueparser_parentKey }}'
+          echo 'description: ${{ steps.issue-parser.outputs.issueparser_description }}'
+          echo 'tasks: ${{ steps.issue-parser.outputs.issueparser_tasks }}'
+          echo 'priority: ${{ steps.issue-parser.outputs.issueparser_priority }}'
+          echo 'repo_gubun: ${{ env.REPO_GUBUN }}'
+          echo 'repo_name: ${{ env.REPO_NAME }}'
+
+      - name: Convert markdown to Jira Syntax
+        uses: peter-evans/jira2md@v1
+        id: md2jira
+        with:
+          input-text: |
+            ### Github Issue Link
+            - ${{ github.event.issue.html_url }}
+            
+            ### 상세 내용
+            ${{ steps.issue-parser.outputs.issueparser_description }}
+            
+            ### 작업 목록
+            ${{ steps.issue-parser.outputs.issueparser_tasks }}
+          mode: md2jira
+
+      - name: Map issue type to Jira
+        id: map-issue-type
+        run: |
+          case "${{ steps.issue-parser.outputs.issueparser_issueType }}" in
+            "Epic") echo "jira_type=Epic" >> $GITHUB_OUTPUT ;;
+            "작업 (Task)") echo "jira_type=Task" >> $GITHUB_OUTPUT ;;
+            *) echo "jira_type=Task" >> $GITHUB_OUTPUT ;;
+          esac
+
+      - name: Map priority to Jira
+        id: map-priority
+        run: |
+          case "${{ steps.issue-parser.outputs.issueparser_priority }}" in
+            "Highest") echo "jira_priority=1" >> $GITHUB_OUTPUT ;;
+            "High") echo "jira_priority=2" >> $GITHUB_OUTPUT ;;
+            "Medium") echo "jira_priority=3" >> $GITHUB_OUTPUT ;;
+            "Low") echo "jira_priority=4" >> $GITHUB_OUTPUT ;;
+            "Lowest") echo "jira_priority=5" >> $GITHUB_OUTPUT ;;
+            *) echo "jira_priority=3" >> $GITHUB_OUTPUT ;;
+          esac
+
+      - name: Get Sprint ID
+        id: get-sprint
+        run: |
+          SPRINT_NAME="${{ steps.issue-parser.outputs.issueparser_sprint }}"
+          case "$SPRINT_NAME" in
+            "스프린트 미할당")
+              echo "sprint_id=" >> $GITHUB_OUTPUT
+              echo "has_sprint=false" >> $GITHUB_OUTPUT
+              ;;
+            "(백엔드)WL7_1_스프린트")
+              echo "sprint_id=40" >> $GITHUB_OUTPUT
+              echo "has_sprint=true" >> $GITHUB_OUTPUT
+              ;;
+            *)
+              echo "sprint_id=" >> $GITHUB_OUTPUT
+              echo "has_sprint=false" >> $GITHUB_OUTPUT
+              ;;
+          esac
+
+      - name: Create Issue (with parent and sprint)
+        if: ${{ steps.issue-parser.outputs.issueparser_parentKey != '' && steps.get-sprint.outputs.has_sprint == 'true' }}
+        id: create-with-parent-sprint
+        uses: atlassian/gajira-create@v3
+        with:
+          project: WL7
+          issuetype: ${{ steps.map-issue-type.outputs.jira_type }}
+          summary: '${{ github.event.issue.title }}'
+          description: '${{ steps.md2jira.outputs.output-text }}'
+          fields: |
+            {
+              "parent": {
+                "key": "${{ steps.issue-parser.outputs.issueparser_parentKey }}"
+              },
+              "priority": {
+                "id": "${{ steps.map-priority.outputs.jira_priority }}"
+              },
+              "customfield_10041": { "value": "${{ env.REPO_GUBUN }}" },
+              "customfield_10042": { "value": "${{ env.REPO_NAME }}" },
+              "customfield_10020": [${{ steps.get-sprint.outputs.sprint_id }}]
+            }
+
+      - name: Create Issue (with parent, no sprint)
+        if: ${{ steps.issue-parser.outputs.issueparser_parentKey != '' && steps.get-sprint.outputs.has_sprint == 'false' }}
+        id: create-with-parent-no-sprint
+        uses: atlassian/gajira-create@v3
+        with:
+          project: WL7
+          issuetype: ${{ steps.map-issue-type.outputs.jira_type }}
+          summary: '${{ github.event.issue.title }}'
+          description: '${{ steps.md2jira.outputs.output-text }}'
+          fields: |
+            {
+              "parent": {
+                "key": "${{ steps.issue-parser.outputs.issueparser_parentKey }}"
+              },
+              "priority": {
+                "id": "${{ steps.map-priority.outputs.jira_priority }}"
+              },
+              "customfield_10041": { "value": "${{ env.REPO_GUBUN }}" },
+              "customfield_10042": { "value": "${{ env.REPO_NAME }}" }
+            }
+
+      - name: Create Issue (no parent, with sprint)
+        if: ${{ steps.issue-parser.outputs.issueparser_parentKey == '' && steps.get-sprint.outputs.has_sprint == 'true' }}
+        id: create-no-parent-sprint
+        uses: atlassian/gajira-create@v3
+        with:
+          project: WL7
+          issuetype: ${{ steps.map-issue-type.outputs.jira_type }}
+          summary: '${{ github.event.issue.title }}'
+          description: '${{ steps.md2jira.outputs.output-text }}'
+          fields: |
+            {
+              "priority": {
+                "id": "${{ steps.map-priority.outputs.jira_priority }}"
+              },
+              "customfield_10041": { "value": "${{ env.REPO_GUBUN }}" },
+              "customfield_10042": { "value": "${{ env.REPO_NAME }}" },
+              "customfield_10020": [${{ steps.get-sprint.outputs.sprint_id }}]
+            }
+
+      - name: Create Issue (no parent, no sprint)
+        if: ${{ steps.issue-parser.outputs.issueparser_parentKey == '' && steps.get-sprint.outputs.has_sprint == 'false' }}
+        id: create-no-parent-no-sprint
+        uses: atlassian/gajira-create@v3
+        with:
+          project: WL7
+          issuetype: ${{ steps.map-issue-type.outputs.jira_type }}
+          summary: '${{ github.event.issue.title }}'
+          description: '${{ steps.md2jira.outputs.output-text }}'
+          fields: |
+            {
+              "priority": {
+                "id": "${{ steps.map-priority.outputs.jira_priority }}"
+              },
+              "customfield_10041": { "value": "${{ env.REPO_GUBUN }}" },
+              "customfield_10042": { "value": "${{ env.REPO_NAME }}" }
+            }
+
+      - name: Set issue output
+        id: create
+        run: |
+          if [ "${{ steps.create-with-parent-sprint.outputs.issue }}" != "" ]; then
+            echo "issue=${{ steps.create-with-parent-sprint.outputs.issue }}" >> $GITHUB_OUTPUT
+          elif [ "${{ steps.create-with-parent-no-sprint.outputs.issue }}" != "" ]; then
+            echo "issue=${{ steps.create-with-parent-no-sprint.outputs.issue }}" >> $GITHUB_OUTPUT
+          elif [ "${{ steps.create-no-parent-sprint.outputs.issue }}" != "" ]; then
+            echo "issue=${{ steps.create-no-parent-sprint.outputs.issue }}" >> $GITHUB_OUTPUT
+          else
+            echo "issue=${{ steps.create-no-parent-no-sprint.outputs.issue }}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Log created issue
+        run: echo "Jira Issue ${{ steps.create.outputs.issue }} was created"
+
+      - name: Update issue title
+        uses: actions-cool/issues-helper@v3
+        with:
+          actions: 'update-issue'
+          token: ${{ secrets.GITHUB_TOKEN }}
+          title: '[${{ steps.create.outputs.issue }}] ${{ github.event.issue.title }}'
+
+      - name: Add comment with Jira issue link
+        uses: actions-cool/issues-helper@v3
+        with:
+          actions: 'create-comment'
+          token: ${{ secrets.GITHUB_TOKEN }}
+          issue-number: ${{ github.event.issue.number }}
+          body: |
+            ## Jira Issue Created
+            
+            **Issue:** [${{ steps.create.outputs.issue }}](${{ secrets.JIRA_BASE_URL }}/browse/${{ steps.create.outputs.issue }})
+            **Type:** ${{ steps.map-issue-type.outputs.jira_type }}
+            **Priority:** ${{ steps.issue-parser.outputs.issueparser_priority }}
+            **구분:** ${{ env.REPO_GUBUN }}
+            **Repo:** ${{ env.REPO_NAME }}
+            **Sprint:** ${{ steps.issue-parser.outputs.issueparser_sprint }}
+            ${{ steps.issue-parser.outputs.issueparser_parentKey != '' && format('**Parent Issue:** {0}', steps.issue-parser.outputs.issueparser_parentKey) || '' }}
