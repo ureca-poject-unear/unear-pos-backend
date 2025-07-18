@@ -62,8 +62,9 @@ jobs:
         id: map-issue-type
         run: |
           case "${{ steps.issue-parser.outputs.issueparser_issueType }}" in
-            "에픽") echo "jira_type=에픽" >> $GITHUB_OUTPUT ;;
+            "버그") echo "jira_type=버그" >> $GITHUB_OUTPUT ;;
             "작업") echo "jira_type=작업" >> $GITHUB_OUTPUT ;;
+            "스토리") echo "jira_type=스토리" >> $GITHUB_OUTPUT ;;
             *) echo "jira_type=작업" >> $GITHUB_OUTPUT ;;
           esac
 
@@ -109,9 +110,7 @@ jobs:
           description: '${{ steps.md2jira.outputs.output-text }}'
           fields: |
             {
-              "parent": {
-                "key": "${{ steps.issue-parser.outputs.issueparser_parentKey }}"
-              },
+              "parent.key": "${{ steps.issue-parser.outputs.issueparser_parentKey }}",
               "priority": {
                 "id": "${{ steps.map-priority.outputs.jira_priority }}"
               },
@@ -131,9 +130,7 @@ jobs:
           description: '${{ steps.md2jira.outputs.output-text }}'
           fields: |
             {
-              "parent": {
-                "key": "${{ steps.issue-parser.outputs.issueparser_parentKey }}"
-              },
+              "parent.key": "${{ steps.issue-parser.outputs.issueparser_parentKey }}",
               "priority": {
                 "id": "${{ steps.map-priority.outputs.jira_priority }}"
               },
