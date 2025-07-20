@@ -81,7 +81,9 @@ jobs:
           description: "${{ steps.md2jira.outputs.output-text }}"
           fields: |
             {
-              "parent.key": "${{ steps.parsed.outputs.parentKey }}",
+              "parent": {
+                "key": "${{ steps.parsed.outputs.parentKey }}"
+              },
               "customfield_10041": { "value": "${{ env.REPO_GUBUN }}" },
               "customfield_10042": { "value": "${{ env.REPO_NAME }}" }
             }
