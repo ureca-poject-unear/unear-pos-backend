@@ -85,7 +85,7 @@ jobs:
             echo "Current status of $JIRA_KEY: $CURRENT_STATUS"
             
             # 이미 완료된 이슈는 스킵
-            if [[ "$CURRENT_STATUS" == "완료" || "$CURRENT_STATUS" == "Done" ]]; then
+            if [[ "$CURRENT_STATUS" == "완료" || "$CURRENT_STATUS" == "Done" || "$CURRENT_STATUS" == "DONE" ]]; then
               echo "already_done=true" >> $GITHUB_OUTPUT
               echo "$JIRA_KEY is already done, skipping"
               exit 0
@@ -98,7 +98,7 @@ jobs:
               "${{ secrets.JIRA_BASE_URL }}/rest/api/2/issue/$JIRA_KEY/transitions")
             
             # "완료" 또는 "Done" 전환 ID 찾기
-            DONE_ID=$(echo "$TRANSITIONS" | jq -r '.transitions[] | select(.name == "완료" or .name == "Done" or .name == "Close") | .id' | head -1)
+            DONE_ID=$(echo "$TRANSITIONS" | jq -r '.transitions[] | select(.name == "완료" or .name == "Done" or .name == "DONE" or .name == "Close") | .id' | head -1)
             
             if [ ! -z "$DONE_ID" ]; then
               echo "Transitioning $JIRA_KEY to Done with ID: $DONE_ID"
