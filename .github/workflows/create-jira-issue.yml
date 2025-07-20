@@ -34,12 +34,25 @@ jobs:
 
       - name: Log Issue Parser
         run: |
+          echo 'JSON String:'
           echo '${{ steps.issue-parser.outputs.jsonString }}'
+          echo '---'
+          echo 'Individual fields:'
+          echo 'issueType: ${{ fromJson(steps.issue-parser.outputs.jsonString).issueparser_issueType }}'
+          echo 'parentKey: ${{ fromJson(steps.issue-parser.outputs.jsonString).issueparser_parentKey }}'
+          echo 'description: ${{ fromJson(steps.issue-parser.outputs.jsonString).issueparser_description }}'
+
+      - name: Set parsed values
+        id: parsed
+        run: |
+          echo "issueType=${{ fromJson(steps.issue-parser.outputs.jsonString).issueparser_issueType }}" >> $GITHUB_OUTPUT
+          echo "parentKey=${{ fromJson(steps.issue-parser.outputs.jsonString).issueparser_parentKey }}" >> $GITHUB_OUTPUT
+          echo "description=${{ fromJson(steps.issue-parser.outputs.jsonString).issueparser_description }}" >> $GITHUB_OUTPUT
 
       - name: Map issue type to Jira
         id: map-issue-type
         run: |
-          case "${{ steps.issue-parser.outputs.issueparser_issueType }}" in
+          case "${{ steps.parsed.outputs.issueType }}" in
             "버그") echo "jira_type=버그" >> $GITHUB_OUTPUT ;;
             "작업") echo "jira_type=작업" >> $GITHUB_OUTPUT ;;
             "스토리") echo "jira_type=스토리" >> $GITHUB_OUTPUT ;;
@@ -58,7 +71,7 @@ jobs:
           mode: md2jira
 
       - name: Create Issue (with parent)
-        if: ${{ steps.issue-parser.outputs.issueparser_parentKey != '' }}
+        if: ${{ steps.parsed.outputs.parentKey != '' }}
         id: create-with-parent
         uses: atlassian/gajira-create@v3
         with:
@@ -68,13 +81,13 @@ jobs:
           description: "${{ steps.md2jira.outputs.output-text }}"
           fields: |
             {
-              "parent.key": "${{ steps.issue-parser.outputs.issueparser_parentKey }}",
+              "parent.key": "${{ steps.parsed.outputs.parentKey }}",
               "customfield_10041": { "value": "${{ env.REPO_GUBUN }}" },
               "customfield_10042": { "value": "${{ env.REPO_NAME }}" }
             }
 
       - name: Create Issue (no parent)
-        if: ${{ steps.issue-parser.outputs.issueparser_parentKey == '' }}
+        if: ${{ steps.parsed.outputs.parentKey == '' }}
         id: create-no-parent
         uses: atlassian/gajira-create@v3
         with:
@@ -114,10 +127,10 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           issue-number: ${{ github.event.issue.number }}
           body: |
-            ## 🎟 Jira Issue Created
+            ## 🎟️ Jira Issue Created
             
             **Issue:** [${{ steps.create.outputs.issue }}](${{ secrets.JIRA_BASE_URL }}/browse/${{ steps.create.outputs.issue }})
             **Type:** ${{ steps.map-issue-type.outputs.jira_type }}
             **구분:** ${{ env.REPO_GUBUN }}
             **Repo:** ${{ env.REPO_NAME }}
-            ${{ steps.issue-parser.outputs.issueparser_parentKey != '' && format('**Parent Issue:** {0}', steps.issue-parser.outputs.issueparser_parentKey) || '' }}
+            ${{ steps.parsed.outputs.parentKey != '' && format('**Parent Issue:** {0}', steps.parsed.outputs.parentKey) || '' }}
