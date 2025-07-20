@@ -45,15 +45,32 @@ jobs:
       - name: Determine Issue Type
         id: determine-type
         run: |
-          if [ "${{ steps.main-parser.outputs.jsonString }}" != "" ] && [ "${{ steps.main-parser.outcome }}" == "success" ]; then
+          MAIN_JSON='${{ steps.main-parser.outputs.jsonString }}'
+          SUBTASK_JSON='${{ steps.subtask-parser.outputs.jsonString }}'
+          
+          echo "Main parser outcome: ${{ steps.main-parser.outcome }}"
+          echo "Subtask parser outcome: ${{ steps.subtask-parser.outcome }}"
+          echo "Main JSON length: ${#MAIN_JSON}"
+          echo "Subtask JSON length: ${#SUBTASK_JSON}"
+          
+          # JSON에서 특정 필드 확인으로 템플릿 구분
+          if echo "$MAIN_JSON" | grep -q "issueparser_issueType" && [ "${{ steps.main-parser.outcome }}" == "success" ]; then
             echo "issue_type=main" >> $GITHUB_OUTPUT
-            echo "Detected: Main Issue"
-          elif [ "${{ steps.subtask-parser.outputs.jsonString }}" != "" ] && [ "${{ steps.subtask-parser.outcome }}" == "success" ]; then
+            echo "Detected: Main Issue (has issueparser_issueType)"
+          elif echo "$SUBTASK_JSON" | grep -q "issueparser_parentKey" && [ "${{ steps.subtask-parser.outcome }}" == "success" ]; then
             echo "issue_type=subtask" >> $GITHUB_OUTPUT
-            echo "Detected: Sub-task"
+            echo "Detected: Sub-task (has issueparser_parentKey)"
+          elif [ ${#MAIN_JSON} -gt 10 ] && [ "${{ steps.main-parser.outcome }}" == "success" ]; then
+            echo "issue_type=main" >> $GITHUB_OUTPUT
+            echo "Detected: Main Issue (fallback by JSON length)"
+          elif [ ${#SUBTASK_JSON} -gt 10 ] && [ "${{ steps.subtask-parser.outcome }}" == "success" ]; then
+            echo "issue_type=subtask" >> $GITHUB_OUTPUT
+            echo "Detected: Sub-task (fallback by JSON length)"
           else
             echo "issue_type=unknown" >> $GITHUB_OUTPUT
             echo "Could not determine issue type"
+            echo "Main JSON: $MAIN_JSON"
+            echo "Subtask JSON: $SUBTASK_JSON"
           fi
 
       # 메인 이슈 처리
