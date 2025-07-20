@@ -9,9 +9,10 @@ body:
       label: '이슈 타입 (Issue Type)'
       description: '생성할 이슈의 타입을 선택해주세요'
       options:
-        - 버그
         - 작업
+        - 버그
         - 스토리
+      default: 0
     validations:
       required: true
 
@@ -20,7 +21,7 @@ body:
     attributes:
       label: '상위 작업 (Parent Issue)'
       placeholder: 'WL7-123'
-      description: '상위 작업의 Ticket Number를 WL7-XXX 형식으로 기입해주세요 (선택사항)'
+      description: '상위 작업의 Ticket Number를 WL7-XXX 형식으로 기입해주세요 (선택사항) - 주의: 버그 타입은 상위 항목을 입력하지 마세요'
     validations:
       required: false
 
