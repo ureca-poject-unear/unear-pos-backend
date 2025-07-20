@@ -192,9 +192,7 @@ jobs:
             {
               "parent": {
                 "key": "${{ steps.process-subtask.outputs.parentKey }}"
-              },
-              "customfield_10041": { "value": "${{ env.REPO_GUBUN }}" },
-              "customfield_10042": { "value": "${{ env.REPO_NAME }}" }
+              }
             }
 
       - name: Set final issue output
