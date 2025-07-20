@@ -12,8 +12,6 @@ env:
 jobs:
   create-subtask:
     name: Create Jira Sub-task
-    # sub-task.yml 템플릿으로 생성된 이슈만 처리
-    if: contains(github.event.issue.labels.*.name, 'subtask')
     runs-on: ubuntu-latest
     steps:
       - name: Login
@@ -28,18 +26,32 @@ jobs:
         with:
           ref: main
 
-      - name: Issue Parser
+      - name: Try Parse Sub-task Template
         uses: stefanbuck/github-issue-praser@v3
         id: issue-parser
+        continue-on-error: true
         with:
           template-path: .github/ISSUE_TEMPLATE/sub-task.yml
 
+      - name: Check if Sub-task Template Parsed Successfully
+        id: check-subtask-template
+        run: |
+          if [ "${{ steps.issue-parser.outputs.jsonString }}" != "" ] && [ "${{ steps.issue-parser.outcome }}" == "success" ]; then
+            echo "is_subtask=true" >> $GITHUB_OUTPUT
+            echo "Sub-task template parsed successfully"
+          else
+            echo "is_subtask=false" >> $GITHUB_OUTPUT
+            echo "Sub-task template parsing failed - this is not a sub-task"
+          fi
+
       - name: Log Issue Parser
+        if: ${{ steps.check-subtask-template.outputs.is_subtask == 'true' }}
         run: |
           echo 'JSON String:'
           echo '${{ steps.issue-parser.outputs.jsonString }}'
 
       - name: Set parsed values
+        if: ${{ steps.check-subtask-template.outputs.is_subtask == 'true' }}
         id: parsed
         run: |
           echo "description=${{ fromJson(steps.issue-parser.outputs.jsonString).issueparser_description }}" >> $GITHUB_OUTPUT
@@ -66,6 +78,7 @@ jobs:
           echo "Processed parentKey: $PARENT_KEY"
 
       - name: Convert markdown to Jira Syntax
+        if: ${{ steps.check-subtask-template.outputs.is_subtask == 'true' }}
         uses: peter-evans/jira2md@v1
         id: md2jira
         with:
@@ -77,7 +90,7 @@ jobs:
           mode: md2jira
 
       - name: Create sub-task
-        if: ${{ steps.parsed.outputs.parentKey != '' }}
+        if: ${{ steps.check-subtask-template.outputs.is_subtask == 'true' && steps.parsed.outputs.parentKey != '' }}
         id: create-subtask
         uses: atlassian/gajira-create@v3
         with:
@@ -95,9 +108,11 @@ jobs:
             }
 
       - name: Log created subtask
+        if: ${{ steps.check-subtask-template.outputs.is_subtask == 'true' }}
         run: echo "Jira Sub-task ${{ steps.create-subtask.outputs.issue }} was created"
 
       - name: Update issue title
+        if: ${{ steps.check-subtask-template.outputs.is_subtask == 'true' }}
         uses: actions-cool/issues-helper@v3
         with:
           actions: "update-issue"
@@ -105,6 +120,7 @@ jobs:
           title: "[${{ steps.create-subtask.outputs.issue }}] ${{ github.event.issue.title }}"
 
       - name: Add comment with created subtask
+        if: ${{ steps.check-subtask-template.outputs.is_subtask == 'true' }}
         uses: actions-cool/issues-helper@v3
         with:
           actions: 'create-comment'
