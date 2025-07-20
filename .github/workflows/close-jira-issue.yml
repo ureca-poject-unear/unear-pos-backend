@@ -24,7 +24,7 @@ jobs:
           echo "GitHub Issue Title: $TITLE"
           
           # [WL7-123] 형태로 제목에 있는 Jira 키 추출
-          if [[ "$TITLE" =~ \[([A-Z]+-[0-9]+)\] ]]; then
+          if [[ "$TITLE" =~ \[([A-Z0-9]+-[0-9]+)\] ]]; then
             JIRA_KEY="${BASH_REMATCH[1]}"
             echo "jira_key=$JIRA_KEY" >> $GITHUB_OUTPUT
             echo "Found Jira key: $JIRA_KEY"
