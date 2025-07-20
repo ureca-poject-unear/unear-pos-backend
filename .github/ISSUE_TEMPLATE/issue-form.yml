@@ -15,17 +15,6 @@ body:
     validations:
       required: true
 
-  - type: dropdown
-    id: issueparser_sprint
-    attributes:
-      label: '스프린트 (Sprint)'
-      description: '할당할 스프린트를 선택해주세요'
-      options:
-        - (백엔드)WL7_1
-        - 스프린트 미할당
-    validations:
-      required: true
-
   - type: input
     id: issueparser_parentKey
     attributes:
@@ -40,21 +29,6 @@ body:
     attributes:
       label: '상세 내용 (Description)'
       description: '이슈에 대해서 간략히 설명해주세요'
-    validations:
-      required: true
-      
-  - type: dropdown
-    id: issueparser_priority
-    attributes:
-      label: '우선순위 (Priority)'
-      description: '이슈의 우선순위를 선택해주세요'
-      options:
-        - Highest
-        - High
-        - Medium
-        - Low
-        - Lowest
-      default: 2
     validations:
       required: true
       
