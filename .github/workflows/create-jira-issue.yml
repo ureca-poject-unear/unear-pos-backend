@@ -52,8 +52,29 @@ jobs:
         id: parsed
         run: |
           echo "issueType=${{ fromJson(steps.issue-parser.outputs.jsonString).issueparser_issueType }}" >> $GITHUB_OUTPUT
-          echo "parentKey=${{ fromJson(steps.issue-parser.outputs.jsonString).issueparser_parentKey }}" >> $GITHUB_OUTPUT
           echo "description=${{ fromJson(steps.issue-parser.outputs.jsonString).issueparser_description }}" >> $GITHUB_OUTPUT
+          echo "tasks=${{ fromJson(steps.issue-parser.outputs.jsonString).issueparser_tasks }}" >> $GITHUB_OUTPUT
+          
+          # 상위 에픽 번호 처리 (숫자만 입력된 경우 WL7- 접두사 추가)
+          PARENT_INPUT="${{ fromJson(steps.issue-parser.outputs.jsonString).issueparser_parentKey }}"
+          if [ ! -z "$PARENT_INPUT" ]; then
+            if [[ "$PARENT_INPUT" =~ ^[0-9]+$ ]]; then
+              # 숫자만 입력된 경우
+              PARENT_KEY="WL7-$PARENT_INPUT"
+            elif [[ "$PARENT_INPUT" =~ ^WL7-[0-9]+$ ]]; then
+              # 이미 WL7- 형태로 입력된 경우
+              PARENT_KEY="$PARENT_INPUT"
+            else
+              # 잘못된 형태
+              PARENT_KEY=""
+            fi
+          else
+            PARENT_KEY=""
+          fi
+          
+          echo "parentKey=$PARENT_KEY" >> $GITHUB_OUTPUT
+          echo "Original input: $PARENT_INPUT"
+          echo "Processed parentKey: $PARENT_KEY"
 
       - name: Map issue type to Jira
         id: map-issue-type
