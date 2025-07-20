@@ -19,9 +19,9 @@ body:
   - type: input
     id: issueparser_parentKey
     attributes:
-      label: '상위 작업 (Parent Issue)'
+      label: '상위 에픽 (Parent Epic)'
       placeholder: 'WL7-123'
-      description: '상위 작업의 Ticket Number를 WL7-XXX 형식으로 기입해주세요 (선택사항) - 주의: 버그 타입은 상위 항목을 입력하지 마세요'
+      description: '상위 에픽의 Ticket Number를 WL7-XXX 형식으로 기입해주세요 (선택사항) - 작업/버그/스토리는 에픽의 하위로만 연결됩니다'
     validations:
       required: false
 
