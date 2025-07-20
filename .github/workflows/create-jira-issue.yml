@@ -70,8 +70,34 @@ jobs:
             ${{ github.event.issue.body }}
           mode: md2jira
 
+      - name: Check parent hierarchy
+        id: check-hierarchy
+        run: |
+          ISSUE_TYPE="${{ steps.parsed.outputs.issueType }}"
+          PARENT_KEY="${{ steps.parsed.outputs.parentKey }}"
+          
+          if [ "$PARENT_KEY" = "" ]; then
+            echo "has_parent=false" >> $GITHUB_OUTPUT
+            echo "can_link=false" >> $GITHUB_OUTPUT
+            echo "reason=" >> $GITHUB_OUTPUT
+          else
+            echo "has_parent=true" >> $GITHUB_OUTPUT
+            
+            # 정확한 계층 구조 체크
+            case "$ISSUE_TYPE" in
+              "작업"|"버그"|"스토리")
+                echo "can_link=true" >> $GITHUB_OUTPUT
+                echo "reason=상위 항목은 에픽이어야 합니다" >> $GITHUB_OUTPUT
+                ;;
+              *)
+                echo "can_link=false" >> $GITHUB_OUTPUT
+                echo "reason=지원되지 않는 이슈 타입입니다" >> $GITHUB_OUTPUT
+                ;;
+            esac
+          fi
+
       - name: Create Issue (with parent)
-        if: ${{ steps.parsed.outputs.parentKey != '' }}
+        if: ${{ steps.check-hierarchy.outputs.has_parent == 'true' && steps.check-hierarchy.outputs.can_link == 'true' }}
         id: create-with-parent
         uses: atlassian/gajira-create@v3
         with:
@@ -89,7 +115,7 @@ jobs:
             }
 
       - name: Create Issue (no parent)
-        if: ${{ steps.parsed.outputs.parentKey == '' }}
+        if: ${{ steps.check-hierarchy.outputs.has_parent == 'false' || steps.check-hierarchy.outputs.can_link == 'false' }}
         id: create-no-parent
         uses: atlassian/gajira-create@v3
         with:
@@ -103,24 +129,33 @@ jobs:
               "customfield_10042": { "value": "${{ env.REPO_NAME }}" }
             }
 
+      - name: Add parent link comment (if specified)
+        if: ${{ steps.parsed.outputs.parentKey != '' }}
+        uses: actions-cool/issues-helper@v3
+        with:
+          actions: 'create-comment'
+          token: ${{ secrets.GITHUB_TOKEN }}
+          issue-number: ${{ github.event.issue.number }}
+          body: |
+            ⚠️ **상위 항목 연결 실패**
+            
+            상위 항목 **${{ steps.parsed.outputs.parentKey }}**와의 연결에 실패했습니다.
+            Jira에서 수동으로 연결해주세요.
+
       - name: Set issue output
-        id: create
+        id: issue-output
         run: |
-          if [ "${{ steps.create-with-parent.outputs.issue }}" != "" ]; then
-            echo "issue=${{ steps.create-with-parent.outputs.issue }}" >> $GITHUB_OUTPUT
-          else
-            echo "issue=${{ steps.create-no-parent.outputs.issue }}" >> $GITHUB_OUTPUT
-          fi
+          echo "issue=${{ steps.create.outputs.issue }}" >> $GITHUB_OUTPUT
 
       - name: Log created issue
-        run: echo "Jira Issue ${{ steps.create.outputs.issue }} was created"
+        run: echo "Jira Issue ${{ steps.issue-output.outputs.issue }} was created"
 
       - name: Update issue title
         uses: actions-cool/issues-helper@v3
         with:
           actions: "update-issue"
           token: ${{ secrets.GITHUB_TOKEN }}
-          title: "[${{ steps.create.outputs.issue }}] ${{ github.event.issue.title }}"
+          title: "[${{ steps.issue-output.outputs.issue }}] ${{ github.event.issue.title }}"
 
       - name: Add comment with Jira issue link
         uses: actions-cool/issues-helper@v3
@@ -131,7 +166,7 @@ jobs:
           body: |
             ## 🎟️ Jira Issue Created
             
-            **Issue:** [${{ steps.create.outputs.issue }}](${{ secrets.JIRA_BASE_URL }}/browse/${{ steps.create.outputs.issue }})
+            **Issue:** [${{ steps.issue-output.outputs.issue }}](${{ secrets.JIRA_BASE_URL }}/browse/${{ steps.issue-output.outputs.issue }})
             **Type:** ${{ steps.map-issue-type.outputs.jira_type }}
             **구분:** ${{ env.REPO_GUBUN }}
             **Repo:** ${{ env.REPO_NAME }}
