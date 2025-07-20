@@ -19,9 +19,9 @@ body:
   - type: input
     id: issueparser_parentKey
     attributes:
-      label: '상위 에픽 (Parent Epic)'
+      label: '에픽 (Epic)'
       placeholder: 'WL7-123'
-      description: '상위 에픽의 Ticket Number를 WL7-XXX 형식으로 기입해주세요 (선택사항) - 작업/버그/스토리는 에픽의 하위로만 연결됩니다'
+      description: '에픽의 Ticket Number를 WL7-XXX 형식으로 기입해주세요 (선택사항)'
     validations:
       required: false
 
@@ -37,8 +37,10 @@ body:
     id: issueparser_tasks
     attributes:
       label: '체크리스트 (Tasks)'
-      description: '해당 이슈에 대해 필요한 작업목록을 작성해주세요'
+      description: '해당 이슈에 대해 필요한 작업목록을 작성해주세요 - 각 항목이 Jira 하위 작업으로 자동 생성됩니다'
       value: |
         - [ ] Task 1
+        - [ ] Task 2
+        - [ ] Task 3
     validations:
       required: true
