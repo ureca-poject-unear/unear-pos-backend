@@ -20,8 +20,8 @@ body:
     id: issueparser_parentKey
     attributes:
       label: '에픽 (Epic)'
-      placeholder: 'WL7-123'
-      description: '에픽의 Ticket Number를 WL7-XXX 형식으로 기입해주세요 (선택사항)'
+      placeholder: '123'
+      description: '에픽의 번호만 입력해주세요 (예: 123 → WL7-123으로 자동 변환)'
     validations:
       required: false
 
