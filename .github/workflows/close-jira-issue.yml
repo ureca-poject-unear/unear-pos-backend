@@ -9,14 +9,6 @@ jobs:
     name: Close Jira Issue
     runs-on: ubuntu-latest
     steps:
-      - name: Login to Jira
-        uses: atlassian/gajira-login@v3
-        env:
-          JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
-          JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
-          JIRA_USER_EMAIL: ${{ secrets.JIRA_USER_EMAIL }}
-
-      # GitHub Issue가 닫힐 때만 처리
       - name: Extract Jira Issue Key from GitHub Issue Title
         id: extract-issue-key
         run: |
@@ -33,59 +25,117 @@ jobs:
             echo "jira_key=" >> $GITHUB_OUTPUT
           fi
 
-      - name: Close Jira issue
+      - name: Close Jira Issue
         if: ${{ steps.extract-issue-key.outputs.jira_key != '' }}
         id: close-issue
         run: |
+          set -e
+          
           JIRA_KEY="${{ steps.extract-issue-key.outputs.jira_key }}"
+          JIRA_BASE_URL="${{ secrets.JIRA_BASE_URL }}"
           
           echo "Processing $JIRA_KEY..."
           
-          # 현재 상태 확인
-          STATUS_RESPONSE=$(curl -s -X GET \
-            -H "Authorization: Basic $(echo -n '${{ secrets.JIRA_USER_EMAIL }}:${{ secrets.JIRA_API_TOKEN }}' | base64)" \
-            -H "Content-Type: application/json" \
-            "${{ secrets.JIRA_BASE_URL }}/rest/api/2/issue/$JIRA_KEY")
+          # 기본 인증 헤더 설정
+          AUTH_HEADER="Authorization: Basic $(echo -n '${{ secrets.JIRA_USER_EMAIL }}:${{ secrets.JIRA_API_TOKEN }}' | base64)"
           
-          if echo "$STATUS_RESPONSE" | jq -e '.fields.status.name' > /dev/null; then
-            CURRENT_STATUS=$(echo "$STATUS_RESPONSE" | jq -r '.fields.status.name')
-            echo "current_status=$CURRENT_STATUS" >> $GITHUB_OUTPUT
-            echo "Current status of $JIRA_KEY: $CURRENT_STATUS"
-            
-            # 이미 완료된 이슈는 스킵
-            if [[ "$CURRENT_STATUS" == "완료" || "$CURRENT_STATUS" == "Done" || "$CURRENT_STATUS" == "DONE" ]]; then
-              echo "already_done=true" >> $GITHUB_OUTPUT
-              echo "$JIRA_KEY is already done, skipping"
-              exit 0
-            fi
-            
-            # 가능한 전환 상태 조회
-            TRANSITIONS=$(curl -s -X GET \
-              -H "Authorization: Basic $(echo -n '${{ secrets.JIRA_USER_EMAIL }}:${{ secrets.JIRA_API_TOKEN }}' | base64)" \
-              -H "Content-Type: application/json" \
-              "${{ secrets.JIRA_BASE_URL }}/rest/api/2/issue/$JIRA_KEY/transitions")
-            
-            # "완료" 또는 "Done" 전환 ID 찾기
-            DONE_ID=$(echo "$TRANSITIONS" | jq -r '.transitions[] | select(.name == "완료" or .name == "Done" or .name == "DONE" or .name == "Close") | .id' | head -1)
-            
-            if [ ! -z "$DONE_ID" ]; then
-              echo "Transitioning $JIRA_KEY to Done with ID: $DONE_ID"
-              
-              TRANSITION_RESPONSE=$(curl -s -X POST \
-                -H "Authorization: Basic $(echo -n '${{ secrets.JIRA_USER_EMAIL }}:${{ secrets.JIRA_API_TOKEN }}' | base64)" \
-                -H "Content-Type: application/json" \
-                -d "{\"transition\":{\"id\":\"$DONE_ID\"}}" \
-                "${{ secrets.JIRA_BASE_URL }}/rest/api/2/issue/$JIRA_KEY/transitions")
-              
-              echo "success=true" >> $GITHUB_OUTPUT
-              echo "✅ Successfully closed $JIRA_KEY"
-            else
-              echo "success=false" >> $GITHUB_OUTPUT
-              echo "❌ No 'Done' transition found for $JIRA_KEY"
-            fi
-          else
+          # 현재 상태 확인
+          echo "Fetching current status..."
+          STATUS_RESPONSE=$(curl -s -w "HTTPSTATUS:%{http_code}" -X GET \
+            -H "$AUTH_HEADER" \
+            -H "Content-Type: application/json" \
+            "$JIRA_BASE_URL/rest/api/2/issue/$JIRA_KEY")
+          
+          # HTTP 상태 코드 추출
+          HTTP_CODE=$(echo $STATUS_RESPONSE | tr -d '\n' | sed -e 's/.*HTTPSTATUS://')
+          RESPONSE_BODY=$(echo $STATUS_RESPONSE | sed -e 's/HTTPSTATUS:.*//g')
+          
+          if [ "$HTTP_CODE" -ne 200 ]; then
+            echo "❌ Failed to get issue status. HTTP Code: $HTTP_CODE"
+            echo "Response: $RESPONSE_BODY"
             echo "success=false" >> $GITHUB_OUTPUT
-            echo "❌ Failed to get status for $JIRA_KEY"
+            echo "error_message=Failed to fetch issue status (HTTP $HTTP_CODE)" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+          
+          # 현재 상태 확인
+          if ! echo "$RESPONSE_BODY" | jq -e '.fields.status.name' > /dev/null 2>&1; then
+            echo "❌ Invalid response format"
+            echo "Response: $RESPONSE_BODY"
+            echo "success=false" >> $GITHUB_OUTPUT
+            echo "error_message=Invalid response format" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+          
+          CURRENT_STATUS=$(echo "$RESPONSE_BODY" | jq -r '.fields.status.name')
+          echo "current_status=$CURRENT_STATUS" >> $GITHUB_OUTPUT
+          echo "Current status of $JIRA_KEY: $CURRENT_STATUS"
+          
+          # 이미 완료된 이슈는 스킵
+          if [[ "$CURRENT_STATUS" == "완료" || "$CURRENT_STATUS" == "Done" || "$CURRENT_STATUS" == "DONE" || "$CURRENT_STATUS" == "Closed" ]]; then
+            echo "already_done=true" >> $GITHUB_OUTPUT
+            echo "success=true" >> $GITHUB_OUTPUT
+            echo "$JIRA_KEY is already done, skipping"
+            exit 0
+          fi
+          
+          echo "already_done=false" >> $GITHUB_OUTPUT
+          
+          # 가능한 전환 상태 조회
+          echo "Fetching available transitions..."
+          TRANSITIONS_RESPONSE=$(curl -s -w "HTTPSTATUS:%{http_code}" -X GET \
+            -H "$AUTH_HEADER" \
+            -H "Content-Type: application/json" \
+            "$JIRA_BASE_URL/rest/api/2/issue/$JIRA_KEY/transitions")
+          
+          HTTP_CODE=$(echo $TRANSITIONS_RESPONSE | tr -d '\n' | sed -e 's/.*HTTPSTATUS://')
+          TRANSITIONS_BODY=$(echo $TRANSITIONS_RESPONSE | sed -e 's/HTTPSTATUS:.*//g')
+          
+          if [ "$HTTP_CODE" -ne 200 ]; then
+            echo "❌ Failed to get transitions. HTTP Code: $HTTP_CODE"
+            echo "Response: $TRANSITIONS_BODY"
+            echo "success=false" >> $GITHUB_OUTPUT
+            echo "error_message=Failed to fetch transitions (HTTP $HTTP_CODE)" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+          
+          echo "Available transitions:"
+          echo "$TRANSITIONS_BODY" | jq -r '.transitions[] | "\(.id): \(.name)"'
+          
+          # "완료", "Done", "Close" 등의 전환 ID 찾기
+          DONE_ID=$(echo "$TRANSITIONS_BODY" | jq -r '.transitions[] | select(.name == "완료" or .name == "Done" or .name == "DONE" or .name == "Close" or .name == "Closed") | .id' | head -1)
+          
+          if [ -z "$DONE_ID" ] || [ "$DONE_ID" == "null" ]; then
+            echo "❌ No 'Done' transition found for $JIRA_KEY"
+            echo "Available transitions:"
+            echo "$TRANSITIONS_BODY" | jq -r '.transitions[] | "- \(.name) (ID: \(.id))"'
+            echo "success=false" >> $GITHUB_OUTPUT
+            echo "error_message=No Done transition available" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+          
+          echo "Found transition ID: $DONE_ID"
+          echo "Transitioning $JIRA_KEY to Done..."
+          
+          # 이슈 상태 전환
+          TRANSITION_RESPONSE=$(curl -s -w "HTTPSTATUS:%{http_code}" -X POST \
+            -H "$AUTH_HEADER" \
+            -H "Content-Type: application/json" \
+            -d "{\"transition\":{\"id\":\"$DONE_ID\"}}" \
+            "$JIRA_BASE_URL/rest/api/2/issue/$JIRA_KEY/transitions")
+          
+          HTTP_CODE=$(echo $TRANSITION_RESPONSE | tr -d '\n' | sed -e 's/.*HTTPSTATUS://')
+          TRANSITION_BODY=$(echo $TRANSITION_RESPONSE | sed -e 's/HTTPSTATUS:.*//g')
+          
+          if [ "$HTTP_CODE" -eq 204 ] || [ "$HTTP_CODE" -eq 200 ]; then
+            echo "success=true" >> $GITHUB_OUTPUT
+            echo "✅ Successfully closed $JIRA_KEY"
+          else
+            echo "❌ Failed to transition issue. HTTP Code: $HTTP_CODE"
+            echo "Response: $TRANSITION_BODY"
+            echo "success=false" >> $GITHUB_OUTPUT
+            echo "error_message=Failed to transition issue (HTTP $HTTP_CODE)" >> $GITHUB_OUTPUT
+            exit 1
           fi
 
       - name: Add comment to GitHub
@@ -99,8 +149,9 @@ jobs:
             ## 🎯 Jira 이슈 상태 업데이트
             
             **Jira Issue:** [${{ steps.extract-issue-key.outputs.jira_key }}](${{ secrets.JIRA_BASE_URL }}/browse/${{ steps.extract-issue-key.outputs.jira_key }})
-            **이전 상태:** ${{ steps.close-issue.outputs.current_status }}
+            **이전 상태:** ${{ steps.close-issue.outputs.current_status || 'Unknown' }}
             **결과:** ${{ steps.close-issue.outputs.already_done == 'true' && '이미 완료됨' || (steps.close-issue.outputs.success == 'true' && '✅ 완료 처리됨' || '❌ 완료 실패') }}
+            ${{ steps.close-issue.outputs.error_message && format('**오류:** {0}', steps.close-issue.outputs.error_message) || '' }}
             **트리거:** GitHub Issue 닫힘
             
             🔗 **Jira에서 확인**: [이슈 보기](${{ secrets.JIRA_BASE_URL }}/browse/${{ steps.extract-issue-key.outputs.jira_key }})
