@@ -12,8 +12,6 @@ env:
 jobs:
   create-main-issue:
     name: Create Main Jira Issue
-    # main-issue.yml 템플릿으로 생성된 이슈만 처리
-    if: contains(github.event.issue.labels.*.name, 'feat')
     runs-on: ubuntu-latest
     steps:
       - name: Login
@@ -28,18 +26,32 @@ jobs:
         with:
           ref: main
 
-      - name: Issue Parser
+      - name: Try Parse Main Issue Template
         uses: stefanbuck/github-issue-praser@v3
         id: issue-parser
+        continue-on-error: true
         with:
           template-path: .github/ISSUE_TEMPLATE/main-issue.yml
 
+      - name: Check if Main Issue Template Parsed Successfully
+        id: check-main-template
+        run: |
+          if [ "${{ steps.issue-parser.outputs.jsonString }}" != "" ] && [ "${{ steps.issue-parser.outcome }}" == "success" ]; then
+            echo "is_main_issue=true" >> $GITHUB_OUTPUT
+            echo "Main issue template parsed successfully"
+          else
+            echo "is_main_issue=false" >> $GITHUB_OUTPUT
+            echo "Main issue template parsing failed - this is not a main issue"
+          fi
+
       - name: Log Issue Parser
+        if: ${{ steps.check-main-template.outputs.is_main_issue == 'true' }}
         run: |
           echo 'JSON String:'
           echo '${{ steps.issue-parser.outputs.jsonString }}'
 
       - name: Set parsed values
+        if: ${{ steps.check-main-template.outputs.is_main_issue == 'true' }}
         id: parsed
         run: |
           echo "issueType=${{ fromJson(steps.issue-parser.outputs.jsonString).issueparser_issueType }}" >> $GITHUB_OUTPUT
@@ -67,6 +79,7 @@ jobs:
           echo "Processed parentKey: $PARENT_KEY"
 
       - name: Map issue type to Jira
+        if: ${{ steps.check-main-template.outputs.is_main_issue == 'true' }}
         id: map-issue-type
         run: |
           case "${{ steps.parsed.outputs.issueType }}" in
@@ -77,6 +90,7 @@ jobs:
           esac
 
       - name: Convert markdown to Jira Syntax
+        if: ${{ steps.check-main-template.outputs.is_main_issue == 'true' }}
         uses: peter-evans/jira2md@v1
         id: md2jira
         with:
@@ -88,7 +102,7 @@ jobs:
           mode: md2jira
 
       - name: Create main issue (with epic)
-        if: ${{ steps.parsed.outputs.parentKey != '' }}
+        if: ${{ steps.check-main-template.outputs.is_main_issue == 'true' && steps.parsed.outputs.parentKey != '' }}
         id: create-main-with-epic
         uses: atlassian/gajira-create@v3
         with:
@@ -106,7 +120,7 @@ jobs:
             }
 
       - name: Create main issue (no epic)
-        if: ${{ steps.parsed.outputs.parentKey == '' }}
+        if: ${{ steps.check-main-template.outputs.is_main_issue == 'true' && steps.parsed.outputs.parentKey == '' }}
         id: create-main-no-epic
         uses: atlassian/gajira-create@v3
         with:
@@ -121,6 +135,7 @@ jobs:
             }
 
       - name: Set main issue output
+        if: ${{ steps.check-main-template.outputs.is_main_issue == 'true' }}
         id: main-issue
         run: |
           if [ "${{ steps.create-main-with-epic.outputs.issue }}" != "" ]; then
@@ -130,9 +145,11 @@ jobs:
           fi
 
       - name: Log created issue
+        if: ${{ steps.check-main-template.outputs.is_main_issue == 'true' }}
         run: echo "Main Jira Issue ${{ steps.main-issue.outputs.issue }} was created"
 
       - name: Update issue title
+        if: ${{ steps.check-main-template.outputs.is_main_issue == 'true' }}
         uses: actions-cool/issues-helper@v3
         with:
           actions: "update-issue"
@@ -140,6 +157,7 @@ jobs:
           title: "[${{ steps.main-issue.outputs.issue }}] ${{ github.event.issue.title }}"
 
       - name: Add comment with Jira issue link
+        if: ${{ steps.check-main-template.outputs.is_main_issue == 'true' }}
         uses: actions-cool/issues-helper@v3
         with:
           actions: 'create-comment'
