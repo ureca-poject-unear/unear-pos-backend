@@ -1,4 +1,10 @@
-name: Create Jira issue
+- name: Check parent hierarchy
+        id: check-hierarchy
+        run: |
+          ISSUE_TYPE="${{ steps.parsed.outputs.issueType }}"
+          PARENT_KEY="${{ steps.parsed.outputs.parentKey }}"
+          
+          if [ "$PARENT_KEY" =name: Create Jira issue
 on:
   issues:
     types:
@@ -70,35 +76,33 @@ jobs:
             ${{ github.event.issue.body }}
           mode: md2jira
 
-      - name: Check parent hierarchy
-        id: check-hierarchy
+      - name: Parse checklist tasks
+        id: parse-tasks
         run: |
-          ISSUE_TYPE="${{ steps.parsed.outputs.issueType }}"
-          PARENT_KEY="${{ steps.parsed.outputs.parentKey }}"
+          TASKS="${{ steps.parsed.outputs.tasks }}"
+          echo "Raw tasks:"
+          echo "$TASKS"
           
-          if [ "$PARENT_KEY" = "" ]; then
-            echo "has_parent=false" >> $GITHUB_OUTPUT
-            echo "can_link=false" >> $GITHUB_OUTPUT
-            echo "reason=" >> $GITHUB_OUTPUT
-          else
-            echo "has_parent=true" >> $GITHUB_OUTPUT
-            
-            # 정확한 계층 구조 체크
-            case "$ISSUE_TYPE" in
-              "작업"|"버그"|"스토리")
-                echo "can_link=true" >> $GITHUB_OUTPUT
-                echo "reason=상위 항목은 에픽이어야 합니다" >> $GITHUB_OUTPUT
-                ;;
-              *)
-                echo "can_link=false" >> $GITHUB_OUTPUT
-                echo "reason=지원되지 않는 이슈 타입입니다" >> $GITHUB_OUTPUT
-                ;;
-            esac
+          # 체크리스트에서 작업들 추출 (- [ ] 로 시작하는 라인들)
+          TASK_LIST=$(echo "$TASKS" | grep -E "^- \[ \]" | sed 's/^- \[ \] //' | sed '/^$/d')
+          
+          echo "Parsed task list:"
+          echo "$TASK_LIST"
+          
+          # 작업 개수 세기
+          TASK_COUNT=$(echo "$TASK_LIST" | wc -l)
+          if [ -z "$TASK_LIST" ] || [ "$TASK_LIST" = "" ]; then
+            TASK_COUNT=0
           fi
+          
+          echo "task_count=$TASK_COUNT" >> $GITHUB_OUTPUT
+          echo "task_list<<EOF" >> $GITHUB_OUTPUT
+          echo "$TASK_LIST" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
 
-      - name: Create Issue (with parent)
-        if: ${{ steps.check-hierarchy.outputs.has_parent == 'true' && steps.check-hierarchy.outputs.can_link == 'true' }}
-        id: create-with-parent
+      - name: Create main issue (with epic)
+        if: ${{ steps.parsed.outputs.parentKey != '' }}
+        id: create-main-with-epic
         uses: atlassian/gajira-create@v3
         with:
           project: WL7
@@ -114,9 +118,9 @@ jobs:
               "customfield_10042": { "value": "${{ env.REPO_NAME }}" }
             }
 
-      - name: Create Issue (no parent)
-        if: ${{ steps.check-hierarchy.outputs.has_parent == 'false' || steps.check-hierarchy.outputs.can_link == 'false' }}
-        id: create-no-parent
+      - name: Create main issue (no epic)
+        if: ${{ steps.parsed.outputs.parentKey == '' }}
+        id: create-main-no-epic
         uses: atlassian/gajira-create@v3
         with:
           project: WL7
@@ -128,6 +132,50 @@ jobs:
               "customfield_10041": { "value": "${{ env.REPO_GUBUN }}" },
               "customfield_10042": { "value": "${{ env.REPO_NAME }}" }
             }
+
+      - name: Set main issue output
+        id: main-issue
+        run: |
+          if [ "${{ steps.create-main-with-epic.outputs.issue }}" != "" ]; then
+            echo "issue=${{ steps.create-main-with-epic.outputs.issue }}" >> $GITHUB_OUTPUT
+          else
+            echo "issue=${{ steps.create-main-no-epic.outputs.issue }}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create sub-tasks
+        if: ${{ steps.parse-tasks.outputs.task_count > 0 }}
+        id: create-subtasks
+        run: |
+          MAIN_ISSUE="${{ steps.main-issue.outputs.issue }}"
+          TASK_LIST="${{ steps.parse-tasks.outputs.task_list }}"
+          
+          echo "Creating sub-tasks for main issue: $MAIN_ISSUE"
+          
+          # 각 작업을 하위 작업으로 생성
+          COUNTER=1
+          while IFS= read -r task; do
+            if [ ! -z "$task" ]; then
+              echo "Creating sub-task $COUNTER: $task"
+              
+              # 하위 작업 생성 (gajira-create 액션 직접 호출은 어려우므로 API 호출)
+              curl -X POST \
+                -H "Authorization: Basic $(echo -n '${{ secrets.JIRA_USER_EMAIL }}:${{ secrets.JIRA_API_TOKEN }}' | base64)" \
+                -H "Content-Type: application/json" \
+                -d "{
+                  \"fields\": {
+                    \"project\": {\"key\": \"WL7\"},
+                    \"issuetype\": {\"name\": \"하위 작업\"},
+                    \"summary\": \"$task\",
+                    \"parent\": {\"key\": \"$MAIN_ISSUE\"},
+                    \"customfield_10041\": {\"value\": \"${{ env.REPO_GUBUN }}\"},
+                    \"customfield_10042\": {\"value\": \"${{ env.REPO_NAME }}\"}
+                  }
+                }" \
+                "${{ secrets.JIRA_BASE_URL }}/rest/api/2/issue"
+              
+              COUNTER=$((COUNTER + 1))
+            fi
+          done <<< "$TASK_LIST"
 
       - name: Add parent link comment (if specified)
         if: ${{ steps.parsed.outputs.parentKey != '' }}
