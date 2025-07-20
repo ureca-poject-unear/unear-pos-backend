@@ -24,7 +24,7 @@ jobs:
       - name: Checkout main code
         uses: actions/checkout@v4
         with:
-          ref: main
+          ref: develop
 
       # 메인 이슈 템플릿 파싱 시도
       - name: Try Parse Main Issue Template
