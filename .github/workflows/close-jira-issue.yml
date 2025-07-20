@@ -20,13 +20,18 @@ jobs:
         id: extract-key
         run: |
           ISSUE_TITLE="${{ github.event.issue.title }}"
-          JIRA_KEY=$(echo "$ISSUE_TITLE" | grep -oE '[A-Z]+-[0-9]+')
-          echo "JIRA_KEY=$JIRA_KEY" >> $GITHUB_ENV
-          echo "Found Jira key: $JIRA_KEY"
+          # WL7-274 같은 패턴을 매치하도록 수정 (문자+숫자-숫자)
+          JIRA_KEY=$(echo "$ISSUE_TITLE" | grep -oE '[A-Z]+[0-9]*-[0-9]+' || echo "")
+          if [ -n "$JIRA_KEY" ]; then
+            echo "JIRA_KEY=$JIRA_KEY" >> $GITHUB_ENV
+            echo "Found Jira key: $JIRA_KEY"
+          else
+            echo "No Jira key found in title: $ISSUE_TITLE"
+          fi
 
       - name: Close Jira issue
         if: env.JIRA_KEY != ''
         uses: atlassian/gajira-transition@v3
         with:
           issue: ${{ env.JIRA_KEY }}
-          transition: 완료
+          transition: DONE
