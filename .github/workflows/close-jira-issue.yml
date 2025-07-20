@@ -3,9 +3,6 @@ on:
   issues:
     types:
       - closed
-  pull_request:
-    types:
-      - closed
 
 jobs:
   close-jira-issue:
@@ -19,9 +16,8 @@ jobs:
           JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
           JIRA_USER_EMAIL: ${{ secrets.JIRA_USER_EMAIL }}
 
-      # GitHub Issue가 닫힐 때
+      # GitHub Issue가 닫힐 때만 처리
       - name: Extract Jira Issue Key from GitHub Issue Title
-        if: ${{ github.event_name == 'issues' }}
         id: extract-issue-key
         run: |
           TITLE="${{ github.event.issue.title }}"
@@ -37,39 +33,11 @@ jobs:
             echo "jira_key=" >> $GITHUB_OUTPUT
           fi
 
-      # Pull Request가 머지될 때 - 제목에서만 추출
-      - name: Extract Jira Issue Key from PR Title
-        if: ${{ github.event_name == 'pull_request' && github.event.pull_request.merged == true }}
-        id: extract-pr-key
-        run: |
-          PR_TITLE="${{ github.event.pull_request.title }}"
-          
-          echo "PR Title: $PR_TITLE"
-          
-          # PR 제목에서 [WL7-123] 패턴으로 Jira 키 찾기
-          if [[ "$PR_TITLE" =~ \[([A-Z]+-[0-9]+)\] ]]; then
-            JIRA_KEY="${BASH_REMATCH[1]}"
-            echo "jira_key=$JIRA_KEY" >> $GITHUB_OUTPUT
-            echo "Found Jira key in PR title: $JIRA_KEY"
-          else
-            echo "No Jira key found in PR title"
-            echo "jira_key=" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Set final Jira key
-        id: final-key
-        run: |
-          if [ "${{ github.event_name }}" == "issues" ]; then
-            echo "jira_key=${{ steps.extract-issue-key.outputs.jira_key }}" >> $GITHUB_OUTPUT
-          else
-            echo "jira_key=${{ steps.extract-pr-key.outputs.jira_key }}" >> $GITHUB_OUTPUT
-          fi
-
       - name: Close Jira issue
-        if: ${{ steps.final-key.outputs.jira_key != '' }}
+        if: ${{ steps.extract-issue-key.outputs.jira_key != '' }}
         id: close-issue
         run: |
-          JIRA_KEY="${{ steps.final-key.outputs.jira_key }}"
+          JIRA_KEY="${{ steps.extract-issue-key.outputs.jira_key }}"
           
           echo "Processing $JIRA_KEY..."
           
@@ -121,18 +89,18 @@ jobs:
           fi
 
       - name: Add comment to GitHub
-        if: ${{ steps.final-key.outputs.jira_key != '' }}
+        if: ${{ steps.extract-issue-key.outputs.jira_key != '' }}
         uses: actions-cool/issues-helper@v3
         with:
           actions: 'create-comment'
           token: ${{ secrets.GITHUB_TOKEN }}
-          issue-number: ${{ github.event.issue.number || github.event.pull_request.number }}
+          issue-number: ${{ github.event.issue.number }}
           body: |
             ## 🎯 Jira 이슈 상태 업데이트
             
-            **Jira Issue:** [${{ steps.final-key.outputs.jira_key }}](${{ secrets.JIRA_BASE_URL }}/browse/${{ steps.final-key.outputs.jira_key }})
+            **Jira Issue:** [${{ steps.extract-issue-key.outputs.jira_key }}](${{ secrets.JIRA_BASE_URL }}/browse/${{ steps.extract-issue-key.outputs.jira_key }})
             **이전 상태:** ${{ steps.close-issue.outputs.current_status }}
             **결과:** ${{ steps.close-issue.outputs.already_done == 'true' && '이미 완료됨' || (steps.close-issue.outputs.success == 'true' && '✅ 완료 처리됨' || '❌ 완료 실패') }}
-            **트리거:** ${{ github.event_name == 'issues' && 'GitHub Issue 닫힘' || 'PR 머지됨' }}
+            **트리거:** GitHub Issue 닫힘
             
-            🔗 **Jira에서 확인**: [이슈 보기](${{ secrets.JIRA_BASE_URL }}/browse/${{ steps.final-key.outputs.jira_key }})
+            🔗 **Jira에서 확인**: [이슈 보기](${{ secrets.JIRA_BASE_URL }}/browse/${{ steps.extract-issue-key.outputs.jira_key }})
