@@ -1,15 +1,15 @@
 package com.unear.pos.common.exception;
 
 public class BusinessException extends BaseException {
-    protected BusinessException(ErrorCode errorCode) {
+    public BusinessException(ErrorCode errorCode) {
         super(errorCode);
     }
 
-    protected BusinessException(ErrorCode errorCode, String message) {
+    public BusinessException(ErrorCode errorCode, String message) {
         super(errorCode, message);
     }
 
-    protected BusinessException(ErrorCode errorCode, String message, Throwable cause) {
+    public BusinessException(ErrorCode errorCode, String message, Throwable cause) {
         super(errorCode, message, cause);
     }
 }
