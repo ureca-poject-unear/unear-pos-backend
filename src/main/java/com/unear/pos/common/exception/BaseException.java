@@ -1,4 +1,4 @@
-package com.unear.pos.common.response;
+package com.unear.pos.common.exception;
 
 import lombok.Getter;
 
