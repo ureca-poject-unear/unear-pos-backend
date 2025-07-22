@@ -40,7 +40,7 @@ public class GlobalExceptionHandler {
         ErrorCode errorCode = ErrorCode.INVALID_INPUT_VALUE;
 
         return ResponseEntity.status(ErrorCode.INVALID_INPUT_VALUE.getStatus())
-                .body(ApiResponse.fail(ErrorCode.INVALID_INPUT_VALUE));
+                .body(ApiResponse.fail(ErrorCode.INVALID_INPUT_VALUE, errorResponse));
     }
 
     @ExceptionHandler(Exception.class)
