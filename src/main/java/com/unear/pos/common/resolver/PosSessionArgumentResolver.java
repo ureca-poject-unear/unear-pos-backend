@@ -21,7 +21,11 @@ public class PosSessionArgumentResolver implements HandlerMethodArgumentResolver
     public Object resolveArgument(MethodParameter parameter, ModelAndViewContainer mavContainer,
                                   NativeWebRequest webRequest, WebDataBinderFactory binderFactory) throws Exception {
         HttpServletRequest request = webRequest.getNativeRequest(HttpServletRequest.class);
-        return (PosSessionInfo) request.getSession().getAttribute("posSessionInfo");
+        PosSessionInfo sessionInfo = (PosSessionInfo) request.getSession().getAttribute("posSessionInfo");
+        if (sessionInfo == null) {
+            throw new IllegalStateException("로그인이 필요합니다.");
+        }
+        return sessionInfo;
     }
 
 }
