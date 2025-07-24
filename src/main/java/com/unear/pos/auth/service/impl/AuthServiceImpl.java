@@ -12,18 +12,18 @@ import com.unear.pos.pos.entity.Pos;
 import com.unear.pos.pos.repository.PosRepository;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
 public class AuthServiceImpl implements AuthService {
     private final OwnerRepository ownerRepository;
-    private final PasswordEncoder passwordEncoder;
     private final PosRepository posRepository;
     private final PlaceRepository placeRepository;
 
     @Override
+    @Transactional(readOnly = true)
     public ApiResponse<Void> login(LoginRequestDto loginRequestDto, HttpSession session) {
 
         Owner owner = ownerRepository.findByOwnerName(loginRequestDto.getOwnerName())
