@@ -1,4 +1,4 @@
-package com.unear.pos.common.config;
+package com.unear.pos.common.security;
 
 import java.util.List;
 import org.springframework.context.annotation.Bean;
