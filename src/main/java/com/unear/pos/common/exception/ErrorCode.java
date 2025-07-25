@@ -14,6 +14,8 @@ public enum ErrorCode {
     OWNER_NOT_FOUND(HttpStatus.NOT_FOUND, "U404", "사용자를 찾을 수 없습니다."),
     ENTITY_NOT_FOUND(HttpStatus.NOT_FOUND, "E404", "엔티티를 찾을 수 없습니다"),
 
+    INVALID_DATA(HttpStatus.BAD_REQUEST, "M400", "유효하지 않은 데이터입니다"),
+
 
     // membership - M prefix 사용
     MEMBER_NOT_FOUND(HttpStatus.NOT_FOUND, "M404", "회원을 찾을 수 없습니다"),

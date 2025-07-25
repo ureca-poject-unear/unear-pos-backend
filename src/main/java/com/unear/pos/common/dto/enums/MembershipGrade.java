@@ -1,5 +1,6 @@
 package com.unear.pos.common.dto.enums;
 
+import com.unear.pos.common.exception.business.InvalidDataException;
 import java.util.Arrays;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -9,20 +10,18 @@ import lombok.Getter;
 public enum MembershipGrade {
     BASIC("BASIC", "우수"),
     VIP("VIP", "VIP"),
-    VVIP("VVIP", "VVIP"),
-    ALL("ALL", "모든등급");
+    VVIP("VVIP", "VVIP");
 
     private final String code;
     private final String label;
 
     public static MembershipGrade fromCode(String code) {
+        if (code == null) {
+            throw new InvalidDataException("유효하지 않은 멤버십 등급 코드입니다");
+        }
         return Arrays.stream(values())
                 .filter(grade -> grade.code.equals(code))
                 .findFirst()
-                .orElse(BASIC);
-    }
-
-    public static boolean isAll(String code) {
-        return ALL.code.equalsIgnoreCase(code);
+                .orElseThrow(() -> new InvalidDataException("유효하지 않은 멤버십 등급 코드입니다: " + code));
     }
 }
