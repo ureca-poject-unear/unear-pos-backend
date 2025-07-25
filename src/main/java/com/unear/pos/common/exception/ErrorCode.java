@@ -11,7 +11,9 @@ public enum ErrorCode {
     INVALID_INPUT_VALUE(HttpStatus.BAD_REQUEST, "C400", "요청 값이 유효하지 않습니다"),
 
     // business
-    USER_NOT_FOUND(HttpStatus.NOT_FOUND, "U404", "사용자를 찾을 수 없습니다."),
+    OWNER_NOT_FOUND(HttpStatus.NOT_FOUND, "U404", "사용자를 찾을 수 없습니다."),
+    ENTITY_NOT_FOUND(HttpStatus.NOT_FOUND, "E404", "엔티티를 찾을 수 없습니다"),
+
 
     // membership - M prefix 사용
     MEMBER_NOT_FOUND(HttpStatus.NOT_FOUND, "M404", "회원을 찾을 수 없습니다"),
