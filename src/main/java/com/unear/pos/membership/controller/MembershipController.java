@@ -27,11 +27,7 @@ public class MembershipController {
             @RequestBody MemberVerifyRequestDto request,
             @CurrentPosSession PosSessionInfo posInfo) {
 
-        log.info("Verify request: type={}, value={}", request.getType(), request.getValue());
-        log.info("Session info: ownerId={}, placeId={}", posInfo.getOwnerId(), posInfo.getPlaceId());
-
         MemberInfo memberInfo = membershipService.verifyMember(request);
         return ResponseEntity.ok(ApiResponse.success("회원 인증 완료", memberInfo));
     }
-
 }
