@@ -4,15 +4,15 @@ import com.unear.pos.common.exception.BusinessException;
 import com.unear.pos.common.exception.ErrorCode;
 
 public class UserNotFoundException extends BusinessException {
-    public UserNotFoundException(ErrorCode errorCode) {
-        super(errorCode);
+    public UserNotFoundException() {
+        super(ErrorCode.USER_NOT_FOUND);
     }
 
-    public UserNotFoundException(ErrorCode errorCode, String message) {
-        super(errorCode, message);
+    public UserNotFoundException(String message) {
+        super(ErrorCode.USER_NOT_FOUND, message);
     }
 
-    public UserNotFoundException(ErrorCode errorCode, String message, Throwable cause) {
-        super(errorCode, message, cause);
+    public UserNotFoundException(String message, Throwable cause) {
+        super(ErrorCode.USER_NOT_FOUND, message, cause);
     }
 }

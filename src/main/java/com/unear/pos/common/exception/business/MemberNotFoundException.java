@@ -4,15 +4,15 @@ import com.unear.pos.common.exception.BusinessException;
 import com.unear.pos.common.exception.ErrorCode;
 
 public class MemberNotFoundException extends BusinessException {
-    public MemberNotFoundException(ErrorCode errorCode) {
+    public MemberNotFoundException() {
         super(ErrorCode.MEMBER_NOT_FOUND);
     }
 
-    public MemberNotFoundException(ErrorCode errorCode, String message) {
+    public MemberNotFoundException(String message) {
         super(ErrorCode.MEMBER_NOT_FOUND, message);
     }
 
-    public MemberNotFoundException(ErrorCode errorCode, String message, Throwable cause) {
+    public MemberNotFoundException(String message, Throwable cause) {
         super(ErrorCode.MEMBER_NOT_FOUND, message, cause);
     }
 }
