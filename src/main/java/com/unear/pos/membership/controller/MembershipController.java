@@ -6,6 +6,7 @@ import com.unear.pos.common.response.ApiResponse;
 import com.unear.pos.member.dto.MemberInfo;
 import com.unear.pos.membership.dto.MemberVerifyRequestDto;
 import com.unear.pos.membership.service.MembershipService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -24,7 +25,7 @@ public class MembershipController {
 
     @PostMapping("/verify")
     public ResponseEntity<ApiResponse<MemberInfo>> verifyMember(
-            @RequestBody MemberVerifyRequestDto request,
+            @Valid @RequestBody MemberVerifyRequestDto request,
             @CurrentPosSession PosSessionInfo posInfo) {
 
         MemberInfo memberInfo = membershipService.verifyMember(request);
