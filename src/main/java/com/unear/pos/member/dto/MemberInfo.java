@@ -23,6 +23,10 @@ public class MemberInfo {
     }
 
     private static String maskName(String name) {
+        if (name == null || name.isEmpty()) {
+            return name;
+        }
+
         if (name.length() <= 1) {
             return name;
         }
