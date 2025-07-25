@@ -9,6 +9,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.security.web.session.HttpSessionEventPublisher;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
@@ -21,9 +22,8 @@ public class SecurityConfig {
 
     private static final String[] WHITELIST = {
             "/auth/login",
-            "/auth/register"
+            "/auth/register",
     };
-
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http, CorsConfigurationSource corsConfigurationSource)
@@ -39,7 +39,10 @@ public class SecurityConfig {
                         .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
                         .maximumSessions(1)
                         .maxSessionsPreventsLogin(false)
-                        .expiredUrl("/auth/login?expired")
+                )
+                .securityContext(context -> context
+                        .securityContextRepository(new HttpSessionSecurityContextRepository())
+                        .requireExplicitSave(false) // 자동 저장 활성화
                 )
                 .build();
     }

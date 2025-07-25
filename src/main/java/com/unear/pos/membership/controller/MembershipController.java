@@ -7,6 +7,7 @@ import com.unear.pos.member.dto.MemberInfo;
 import com.unear.pos.membership.dto.MemberVerifyRequestDto;
 import com.unear.pos.membership.service.MembershipService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/membership")
 @RequiredArgsConstructor
+@Slf4j
 public class MembershipController {
 
     private final MembershipService membershipService;
@@ -24,6 +26,9 @@ public class MembershipController {
     public ResponseEntity<ApiResponse<MemberInfo>> verifyMember(
             @RequestBody MemberVerifyRequestDto request,
             @CurrentPosSession PosSessionInfo posInfo) {
+
+        log.info("Verify request: type={}, value={}", request.getType(), request.getValue());
+        log.info("Session info: ownerId={}, placeId={}", posInfo.getOwnerId(), posInfo.getPlaceId());
 
         MemberInfo memberInfo = membershipService.verifyMember(request);
         return ResponseEntity.ok(ApiResponse.success("회원 인증 완료", memberInfo));

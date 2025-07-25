@@ -4,6 +4,7 @@ import com.unear.pos.auth.dto.request.LoginRequestDto;
 import com.unear.pos.auth.service.AuthService;
 import com.unear.pos.common.dto.PosSessionInfo;
 import com.unear.pos.common.response.ApiResponse;
+import com.unear.pos.common.security.CustomOwnerUser;
 import com.unear.pos.owner.entity.Owner;
 import com.unear.pos.owner.repository.OwnerRepository;
 import com.unear.pos.place.entity.Place;
@@ -12,6 +13,9 @@ import com.unear.pos.pos.entity.Pos;
 import com.unear.pos.pos.repository.PosRepository;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -37,6 +41,12 @@ public class AuthServiceImpl implements AuthService {
 
         Place place = placeRepository.findById(pos.getPlaceId())
                 .orElseThrow(() -> new RuntimeException("Place not found"));
+
+        CustomOwnerUser userDetails = CustomOwnerUser.from(owner);
+        Authentication auth = new UsernamePasswordAuthenticationToken(
+                userDetails, null, userDetails.getAuthorities());
+
+        SecurityContextHolder.getContext().setAuthentication(auth);
 
         PosSessionInfo posSessionInfo = PosSessionInfo.from(owner, place);
 
