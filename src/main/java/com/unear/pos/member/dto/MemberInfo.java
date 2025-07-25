@@ -10,7 +10,7 @@ import lombok.Getter;
 @Builder
 @AllArgsConstructor
 public class MemberInfo {
-    private String memberId;
+    private Long memberId;
     private String memberName;
     private MembershipGrade memberGrade;
 

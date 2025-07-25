@@ -16,9 +16,10 @@ import lombok.NoArgsConstructor;
 public class Member {
 
     @Id
-    private String userId;
+    private Long userId;
     private String name;
     private String membershipCode;
     private String barcodeNumber;
+    private String tel;
 
 }
