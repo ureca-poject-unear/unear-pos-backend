@@ -17,4 +17,8 @@ public enum DiscountTargetGrade {
     public static boolean isAll(String code) {
         return ALL.code.equalsIgnoreCase(code);
     }
+
+    public static DiscountTargetGrade fromMembershipGrade(MembershipGrade membershipGrade) {
+        return valueOf(membershipGrade.getCode());
+    }
 }

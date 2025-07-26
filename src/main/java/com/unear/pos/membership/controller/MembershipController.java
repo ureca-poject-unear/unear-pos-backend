@@ -28,7 +28,7 @@ public class MembershipController {
             @Valid @RequestBody MemberVerifyRequestDto request,
             @CurrentPosSession PosSessionInfo posInfo) {
 
-        MemberInfo memberInfo = membershipService.verifyMember(request);
+        MemberInfo memberInfo = membershipService.verifyMember(request, posInfo);
         return ResponseEntity.ok(ApiResponse.success("회원 인증 완료", memberInfo));
     }
 }
