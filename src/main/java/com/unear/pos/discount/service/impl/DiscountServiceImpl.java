@@ -53,6 +53,10 @@ public class DiscountServiceImpl implements DiscountService {
                 .orElseThrow(() -> new IllegalArgumentException("적용할 수 없는 할인 정책입니다"));
 
         Money purchaseAmount = Money.of(request.getPurchaseAmount());
+        if (purchaseAmount.isLessThan(Money.zero()) || purchaseAmount.equals(Money.zero())) {
+            throw new IllegalArgumentException("구매 금액은 0보다 커야합니다.");
+        }
+
         Money discountAmount = discountCalculationService.calculateDiscount(purchaseAmount, selectedPolicy);
         Money finalAmount = purchaseAmount.subtract(discountAmount);
 
