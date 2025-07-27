@@ -16,7 +16,6 @@ import com.unear.pos.discount.entity.FranchiseDiscountPolicy;
 import com.unear.pos.discount.entity.GeneralDiscountPolicy;
 import com.unear.pos.discount.repository.FranchiseDiscountPolicyRepository;
 import com.unear.pos.discount.repository.GeneralDiscountPolicyRepository;
-import com.unear.pos.discount.service.DiscountCalculationService;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -29,8 +28,6 @@ public class CouponServiceImpl implements CouponService {
     private final CouponTemplateRepository couponTemplateRepository;
     private final GeneralDiscountPolicyRepository generalDiscountPolicyRepository;
     private final FranchiseDiscountPolicyRepository franchiseDiscountPolicyRepository;
-    private final DiscountCalculationService discountCalculationService;
-
 
     @Override
     public CouponVerifyResponseDto verifyCoupon(CouponVerifyRequestDto request, PosSessionInfo posInfo,
