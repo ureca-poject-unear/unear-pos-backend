@@ -6,6 +6,7 @@ import com.unear.pos.common.dto.PosSessionInfo;
 import com.unear.pos.common.dto.enums.CouponStatus;
 import com.unear.pos.common.dto.enums.MembershipGrade;
 import com.unear.pos.common.dto.enums.PlaceType;
+import com.unear.pos.common.util.MemberSessionUtil;
 import com.unear.pos.coupon.dto.request.CouponApplyRequestDto;
 import com.unear.pos.coupon.entity.CouponTemplate;
 import com.unear.pos.coupon.entity.UserCoupon;
@@ -35,6 +36,7 @@ public class DiscountServiceImpl implements DiscountService {
     private final CouponService couponService;
     private final UserCouponRepository userCouponRepository;
     private final CouponTemplateRepository couponTemplateRepository;
+    private final MemberSessionUtil memberSessionUtil;
 
     @Override
     public List<DiscountPolicyInfo> getDiscountPolicies(MembershipGrade memberGrade, PosSessionInfo posInfo) {
@@ -48,10 +50,7 @@ public class DiscountServiceImpl implements DiscountService {
     public DiscountApplyResponseDto applyMembershipDiscount(DiscountApplyRequestDto request, PosSessionInfo posInfo,
                                                             HttpSession session) {
 
-        MemberSession memberSession = (MemberSession) session.getAttribute("memberSession");
-        if (memberSession == null) {
-            throw new IllegalStateException("회원 인증이 필요합니다");
-        }
+        MemberSession memberSession = memberSessionUtil.validateAndGetMemberSession(session);
 
         MembershipGrade memberGrade = memberSession.getMemberGrade();
 
@@ -70,21 +69,21 @@ public class DiscountServiceImpl implements DiscountService {
         Money discountAmount = discountCalculationService.calculateDiscount(purchaseAmount, selectedPolicy);
         Money finalAmount = purchaseAmount.subtract(discountAmount);
 
-        return DiscountApplyResponseDto.builder()
+        DiscountApplyResponseDto responseDto = DiscountApplyResponseDto.builder()
                 .discountCode(selectedPolicy.getDiscountCode())
                 .discountAmount(discountAmount.getAmount().longValue())
                 .finalAmount(finalAmount.getAmount().longValue())
                 .build();
 
+        memberSessionUtil.saveMembershipDiscount(session, responseDto);
+
+        return responseDto;
     }
 
     public DiscountApplyResponseDto applyCouponDiscount(CouponApplyRequestDto request, PosSessionInfo posInfo,
                                                         HttpSession session) {
 
-        MemberSession memberSession = (MemberSession) session.getAttribute("memberSession");
-        if (memberSession == null) {
-            throw new IllegalStateException("회원 인증이 필요합니다");
-        }
+        MemberSession memberSession = memberSessionUtil.validateAndGetMemberSession(session);
 
         UserCoupon userCoupon = userCouponRepository.findById(request.getUserCouponId())
                 .orElseThrow(() -> new IllegalArgumentException("쿠폰을 찾을 수 없습니다"));
@@ -107,11 +106,15 @@ public class DiscountServiceImpl implements DiscountService {
         userCoupon.markAsUsed();
         userCouponRepository.save(userCoupon);
 
-        return DiscountApplyResponseDto.builder()
+        DiscountApplyResponseDto responseDto = DiscountApplyResponseDto.builder()
                 .discountCode(policy.getDiscountCode())
                 .discountAmount(discountAmount.getAmount().longValue())
                 .finalAmount(finalAmount.getAmount().longValue())
                 .build();
+
+        memberSessionUtil.saveCouponDiscount(session, responseDto);
+
+        return responseDto;
     }
 
 
