@@ -4,9 +4,11 @@ import com.unear.pos.common.dto.enums.MembershipGrade;
 import com.unear.pos.discount.dto.response.DiscountApplyResponseDto;
 import com.unear.pos.member.dto.MemberInfo;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 
 @Getter
+@Builder(toBuilder = true)
 @AllArgsConstructor
 public class MemberSession {
     private Long memberId;
@@ -17,28 +19,46 @@ public class MemberSession {
     private DiscountApplyResponseDto membershipDiscount;
     private DiscountApplyResponseDto couponDiscount;
     private Long totalDiscountAmount;
+    private Long originalAmount;
+
+    private Long userCouponId;   // 추가된 필드
+    private String discountCode;
 
     public static MemberSession from(MemberInfo memberInfo, PosSessionInfo posInfo) {
-        return new MemberSession(
-                memberInfo.getMemberId(),
-                memberInfo.getMemberGrade(),
-                posInfo.getPlaceId(),
-                memberInfo.getMemberName(),
-                null,
-                null,
-                0L
-        );
+        return MemberSession.builder()
+                .memberId(memberInfo.getMemberId())
+                .memberGrade(memberInfo.getMemberGrade())
+                .placeId(posInfo.getPlaceId())
+                .memberName(memberInfo.getMemberName())
+                .totalDiscountAmount(0L)
+                .build();
     }
-
 
     public MemberSession withMembershipDiscount(DiscountApplyResponseDto discount) {
-        return new MemberSession(memberId, memberGrade, placeId, memberName,
-                discount, this.couponDiscount, calculateTotal(discount, this.couponDiscount));
+        Long baseAmount = determineOriginalAmount(discount);
+        return this.toBuilder()
+                .membershipDiscount(discount)
+                .totalDiscountAmount(calculateTotal(discount, this.couponDiscount))
+                .originalAmount(baseAmount)
+                .discountCode(discount.getDiscountCode())
+                .build();
     }
 
-    public MemberSession withCouponDiscount(DiscountApplyResponseDto discount) {
-        return new MemberSession(memberId, memberGrade, placeId, memberName,
-                this.membershipDiscount, discount, calculateTotal(this.membershipDiscount, discount));
+    public MemberSession withCouponDiscount(DiscountApplyResponseDto discount, Long userCouponId) {
+        Long baseAmount = determineOriginalAmount(discount);
+        return this.toBuilder()
+                .couponDiscount(discount)
+                .userCouponId(userCouponId)
+                .totalDiscountAmount(calculateTotal(this.membershipDiscount, discount))
+                .originalAmount(baseAmount)
+                .discountCode(discount.getDiscountCode())
+                .build();
+    }
+
+    private Long determineOriginalAmount(DiscountApplyResponseDto discount) {
+        return this.originalAmount != null
+                ? this.originalAmount
+                : discount.getFinalAmount() + discount.getDiscountAmount();
     }
 
     private Long calculateTotal(DiscountApplyResponseDto membership, DiscountApplyResponseDto coupon) {

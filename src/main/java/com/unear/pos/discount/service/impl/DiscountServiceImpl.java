@@ -112,7 +112,7 @@ public class DiscountServiceImpl implements DiscountService {
                 .finalAmount(finalAmount.getAmount().longValue())
                 .build();
 
-        memberSessionUtil.saveCouponDiscount(session, responseDto);
+        memberSessionUtil.saveCouponDiscount(session, responseDto, request.getUserCouponId());
 
         return responseDto;
     }

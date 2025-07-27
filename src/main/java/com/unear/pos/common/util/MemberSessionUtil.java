@@ -24,9 +24,9 @@ public class MemberSessionUtil {
         session.setAttribute(MEMBER_SESSION_KEY, updated);
     }
 
-    public void saveCouponDiscount(HttpSession session, DiscountApplyResponseDto discount) {
+    public void saveCouponDiscount(HttpSession session, DiscountApplyResponseDto discount, Long userCouponId) {
         MemberSession current = validateAndGetMemberSession(session);
-        MemberSession updated = current.withCouponDiscount(discount);
+        MemberSession updated = current.withCouponDiscount(discount, userCouponId);
         session.setAttribute(MEMBER_SESSION_KEY, updated);
     }
 }
