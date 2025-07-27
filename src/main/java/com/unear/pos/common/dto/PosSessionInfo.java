@@ -1,5 +1,8 @@
 package com.unear.pos.common.dto;
 
+import com.unear.pos.common.dto.enums.EventParticipationStatus;
+import com.unear.pos.common.dto.enums.PlaceCategory;
+import com.unear.pos.common.dto.enums.PlaceType;
 import com.unear.pos.owner.entity.Owner;
 import com.unear.pos.place.entity.Place;
 import lombok.AllArgsConstructor;
@@ -16,9 +19,9 @@ public class PosSessionInfo {
     private String placeName;
     private String placeDesc;
     private String address;
-    private String markerCode;
-    private String eventTypeCode;
-    private String categoryCode;
+    private PlaceType placeType;
+    private EventParticipationStatus eventStatus;
+    private PlaceCategory placeCategory;
     private String benefitCategory;
     private String tel;
     private Integer startTime;
@@ -28,8 +31,9 @@ public class PosSessionInfo {
         return new PosSessionInfo(
                 owner.getOwnerId(), owner.getOwnerName(), owner.getPosId(),
                 place.getPlaceId(), place.getFranchiseId(), place.getPlaceName(),
-                place.getPlaceDesc(), place.getAddress(), place.getMarkerCode(),
-                place.getEventTypeCode(), place.getCategoryCode(),
+                place.getPlaceDesc(), place.getAddress(), PlaceType.valueOf(place.getMarkerCode()),
+                EventParticipationStatus.valueOf(place.getEventTypeCode()),
+                PlaceCategory.valueOf(place.getCategoryCode()),
                 place.getBenefitCategory(), place.getTel(), place.getStartTime(), place.getEndTime()
         );
     }

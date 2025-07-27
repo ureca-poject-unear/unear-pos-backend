@@ -1,12 +1,16 @@
 package com.unear.pos.membership.service.impl;
 
+import com.unear.pos.common.dto.PosSessionInfo;
 import com.unear.pos.common.dto.enums.VerificationType;
 import com.unear.pos.common.exception.business.MemberNotFoundException;
+import com.unear.pos.discount.dto.DiscountPolicyInfo;
+import com.unear.pos.discount.service.DiscountService;
 import com.unear.pos.member.dto.MemberInfo;
 import com.unear.pos.member.entity.Member;
 import com.unear.pos.membership.dto.MemberVerifyRequestDto;
 import com.unear.pos.membership.repository.MemberRepository;
 import com.unear.pos.membership.service.MembershipService;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -15,10 +19,11 @@ import org.springframework.stereotype.Service;
 public class MembershipServiceImpl implements MembershipService {
 
     private final MemberRepository memberRepository;
+    private final DiscountService discountService;
 
 
     @Override
-    public MemberInfo verifyMember(MemberVerifyRequestDto request) {
+    public MemberInfo verifyMember(MemberVerifyRequestDto request, PosSessionInfo posInfo) {
         VerificationType type = VerificationType.fromString(request.getType());
 
         Member member = switch (type) {
@@ -26,7 +31,11 @@ public class MembershipServiceImpl implements MembershipService {
             case PHONE -> findByPhone(request.getValue());
         };
 
-        return MemberInfo.from(member);
+        MemberInfo memberInfo = MemberInfo.from(member);
+
+        List<DiscountPolicyInfo> policies = discountService.getDiscountPolicies(memberInfo.getMemberGrade(), posInfo);
+
+        return memberInfo.withDiscountPolicies(policies);
     }
 
     private Member findByPhone(String value) {
