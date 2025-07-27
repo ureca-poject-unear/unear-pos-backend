@@ -1,5 +1,6 @@
 package com.unear.pos.coupon.entity;
 
+import com.unear.pos.common.dto.enums.CouponStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
@@ -37,7 +38,7 @@ public class UserCoupon {
     private LocalDateTime usedAt;
 
     public void markAsUsed() {
-        this.couponStatusCode = "USED";
+        this.couponStatusCode = CouponStatus.USED.getCode();
         this.usedAt = LocalDateTime.now();
     }
 }
