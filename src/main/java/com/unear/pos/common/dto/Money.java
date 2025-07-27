@@ -11,6 +11,9 @@ public class Money {
     private final BigDecimal amount;
 
     public static Money of(BigDecimal amount) {
+        if (amount == null) {
+            throw new IllegalArgumentException("금액은 null일 수 없습니다");
+        }
         return new Money(amount);
     }
 
