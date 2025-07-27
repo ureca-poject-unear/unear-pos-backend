@@ -3,8 +3,16 @@ package com.unear.pos.discount.service.impl;
 import com.unear.pos.common.dto.MemberSession;
 import com.unear.pos.common.dto.Money;
 import com.unear.pos.common.dto.PosSessionInfo;
+import com.unear.pos.common.dto.enums.CouponStatus;
 import com.unear.pos.common.dto.enums.MembershipGrade;
 import com.unear.pos.common.dto.enums.PlaceType;
+import com.unear.pos.common.util.MemberSessionUtil;
+import com.unear.pos.coupon.dto.request.CouponApplyRequestDto;
+import com.unear.pos.coupon.entity.CouponTemplate;
+import com.unear.pos.coupon.entity.UserCoupon;
+import com.unear.pos.coupon.repository.CouponTemplateRepository;
+import com.unear.pos.coupon.repository.UserCouponRepository;
+import com.unear.pos.coupon.service.CouponService;
 import com.unear.pos.discount.dto.DiscountPolicyInfo;
 import com.unear.pos.discount.dto.request.DiscountApplyRequestDto;
 import com.unear.pos.discount.dto.response.DiscountApplyResponseDto;
@@ -25,6 +33,10 @@ public class DiscountServiceImpl implements DiscountService {
     private final GeneralDiscountPolicyStrategy generalStrategy;
     private final FranchiseDiscountPolicyStrategy franchiseStrategy;
     private final DiscountCalculationService discountCalculationService;
+    private final CouponService couponService;
+    private final UserCouponRepository userCouponRepository;
+    private final CouponTemplateRepository couponTemplateRepository;
+    private final MemberSessionUtil memberSessionUtil;
 
     @Override
     public List<DiscountPolicyInfo> getDiscountPolicies(MembershipGrade memberGrade, PosSessionInfo posInfo) {
@@ -35,13 +47,10 @@ public class DiscountServiceImpl implements DiscountService {
     }
 
     @Override
-    public DiscountApplyResponseDto applyDiscount(DiscountApplyRequestDto request, PosSessionInfo posInfo,
-                                                  HttpSession session) {
+    public DiscountApplyResponseDto applyMembershipDiscount(DiscountApplyRequestDto request, PosSessionInfo posInfo,
+                                                            HttpSession session) {
 
-        MemberSession memberSession = (MemberSession) session.getAttribute("memberSession");
-        if (memberSession == null) {
-            throw new IllegalStateException("회원 인증이 필요합니다");
-        }
+        MemberSession memberSession = memberSessionUtil.validateAndGetMemberSession(session);
 
         MembershipGrade memberGrade = memberSession.getMemberGrade();
 
@@ -60,13 +69,54 @@ public class DiscountServiceImpl implements DiscountService {
         Money discountAmount = discountCalculationService.calculateDiscount(purchaseAmount, selectedPolicy);
         Money finalAmount = purchaseAmount.subtract(discountAmount);
 
-        return DiscountApplyResponseDto.builder()
+        DiscountApplyResponseDto responseDto = DiscountApplyResponseDto.builder()
                 .discountCode(selectedPolicy.getDiscountCode())
                 .discountAmount(discountAmount.getAmount().longValue())
                 .finalAmount(finalAmount.getAmount().longValue())
                 .build();
 
+        memberSessionUtil.saveMembershipDiscount(session, responseDto);
+
+        return responseDto;
     }
+
+    public DiscountApplyResponseDto applyCouponDiscount(CouponApplyRequestDto request, PosSessionInfo posInfo,
+                                                        HttpSession session) {
+
+        MemberSession memberSession = memberSessionUtil.validateAndGetMemberSession(session);
+
+        UserCoupon userCoupon = userCouponRepository.findById(request.getUserCouponId())
+                .orElseThrow(() -> new IllegalArgumentException("쿠폰을 찾을 수 없습니다"));
+
+        if (!userCoupon.getUserId().equals(memberSession.getMemberId())
+                || !CouponStatus.UNUSED.name().equals(userCoupon.getCouponStatusCode())) {
+            throw new IllegalArgumentException("사용할 수 없는 쿠폰입니다");
+        }
+
+        CouponTemplate template = couponTemplateRepository.findById(userCoupon.getCouponTemplateId())
+                .orElseThrow(() -> new IllegalArgumentException("쿠폰 정보를 찾을 수 없습니다"));
+
+        DiscountPolicyInfo policy = couponService.validateCouponAndGetPolicy(template, posInfo,
+                memberSession.getMemberGrade());
+
+        Money purchaseAmount = Money.of(request.getPurchaseAmount());
+        Money discountAmount = discountCalculationService.calculateDiscount(purchaseAmount, policy);
+        Money finalAmount = purchaseAmount.subtract(discountAmount);
+
+        userCoupon.markAsUsed();
+        userCouponRepository.save(userCoupon);
+
+        DiscountApplyResponseDto responseDto = DiscountApplyResponseDto.builder()
+                .discountCode(policy.getDiscountCode())
+                .discountAmount(discountAmount.getAmount().longValue())
+                .finalAmount(finalAmount.getAmount().longValue())
+                .build();
+
+        memberSessionUtil.saveCouponDiscount(session, responseDto, request.getUserCouponId());
+
+        return responseDto;
+    }
+
 
     private DiscountPolicyStrategy selectStrategy(PlaceType placeType) {
         if (placeType.isGeneralPolicy()) {
