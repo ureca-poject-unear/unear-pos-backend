@@ -20,7 +20,7 @@ public enum DiscountCode {
     }
 
     public boolean isCoupon() {
-        return this == COUPON_PERCENT || this == COUPON_FIXED;
+        return this == COUPON_PERCENT || this == COUPON_FIXED || this == COUPON_FCFS;
     }
 
     public boolean isMembershipUnit() {
@@ -37,5 +37,9 @@ public enum DiscountCode {
 
     public boolean isCouponFixed() {
         return this == COUPON_FIXED;
+    }
+
+    public boolean isCouponFcfs() {
+        return this == COUPON_FCFS;
     }
 }
