@@ -3,6 +3,9 @@ package com.unear.pos.membership.controller;
 import com.unear.pos.common.dto.PosSessionInfo;
 import com.unear.pos.common.resolver.CurrentPosSession;
 import com.unear.pos.common.response.ApiResponse;
+import com.unear.pos.discount.dto.request.DiscountApplyRequestDto;
+import com.unear.pos.discount.dto.response.DiscountApplyResponseDto;
+import com.unear.pos.discount.service.DiscountService;
 import com.unear.pos.member.dto.MemberInfo;
 import com.unear.pos.membership.dto.MemberVerifyRequestDto;
 import com.unear.pos.membership.service.MembershipService;
@@ -23,6 +26,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class MembershipController {
 
     private final MembershipService membershipService;
+    private final DiscountService discountService;
 
     @PostMapping("/verify")
     public ResponseEntity<ApiResponse<MemberInfo>> verifyMember(
@@ -32,5 +36,17 @@ public class MembershipController {
 
         MemberInfo memberInfo = membershipService.verifyMember(request, posInfo, session);
         return ResponseEntity.ok(ApiResponse.success("회원 인증 완료", memberInfo));
+    }
+
+    @PostMapping("/apply")
+    public ResponseEntity<ApiResponse<DiscountApplyResponseDto>> applyDiscount(
+            @Valid @RequestBody DiscountApplyRequestDto request,
+            @CurrentPosSession PosSessionInfo posInfo,
+            HttpSession session) {
+
+        DiscountApplyResponseDto response = discountService.applyMembershipDiscount(
+                request, posInfo, session);
+
+        return ResponseEntity.ok(ApiResponse.success("할인 적용 완료", response));
     }
 }
