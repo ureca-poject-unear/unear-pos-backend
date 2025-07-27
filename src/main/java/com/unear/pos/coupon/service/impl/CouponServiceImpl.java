@@ -41,6 +41,10 @@ public class CouponServiceImpl implements CouponService {
                 .findByBarcodeNumber(request.getBarcodeNumber())
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 쿠폰입니다"));
 
+        if (!userCoupon.isOwnedBy(memberSession.getMemberId()) || !userCoupon.isUsable()) {
+            throw new IllegalArgumentException("사용할 수 없는 쿠폰입니다");
+        }
+
         CouponTemplate template = couponTemplateRepository.findById(userCoupon.getCouponTemplateId())
                 .orElseThrow(() -> new IllegalArgumentException("쿠폰 정보를 찾을 수 없습니다"));
 

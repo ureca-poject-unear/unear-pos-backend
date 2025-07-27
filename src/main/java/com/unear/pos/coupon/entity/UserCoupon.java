@@ -37,8 +37,17 @@ public class UserCoupon {
     @Column(name = "used_at")
     private LocalDateTime usedAt;
 
+
+    public boolean isUsable() {
+        return CouponStatus.UNUSED.getCode().equals(this.couponStatusCode);
+    }
+    
     public void markAsUsed() {
         this.couponStatusCode = CouponStatus.USED.getCode();
         this.usedAt = LocalDateTime.now();
+    }
+
+    public boolean isOwnedBy(Long memberId) {
+        return this.userId != null && this.userId.equals(memberId);
     }
 }
