@@ -4,6 +4,7 @@ import com.unear.pos.common.dto.MemberSession;
 import com.unear.pos.common.dto.PosSessionInfo;
 import com.unear.pos.common.dto.enums.MembershipGrade;
 import com.unear.pos.common.dto.enums.PlaceType;
+import com.unear.pos.common.util.MemberSessionUtil;
 import com.unear.pos.coupon.dto.request.CouponVerifyRequestDto;
 import com.unear.pos.coupon.dto.response.CouponVerifyResponseDto;
 import com.unear.pos.coupon.entity.CouponTemplate;
@@ -28,15 +29,13 @@ public class CouponServiceImpl implements CouponService {
     private final CouponTemplateRepository couponTemplateRepository;
     private final GeneralDiscountPolicyRepository generalDiscountPolicyRepository;
     private final FranchiseDiscountPolicyRepository franchiseDiscountPolicyRepository;
+    private final MemberSessionUtil memberSessionUtil;
 
     @Override
     public CouponVerifyResponseDto verifyCoupon(CouponVerifyRequestDto request, PosSessionInfo posInfo,
                                                 HttpSession session) {
 
-        MemberSession memberSession = (MemberSession) session.getAttribute("memberSession");
-        if (memberSession == null) {
-            throw new IllegalStateException("회원 인증이 필요합니다");
-        }
+        MemberSession memberSession = memberSessionUtil.validateAndGetMemberSession(session);
 
         UserCoupon userCoupon = userCouponRepository
                 .findByBarcodeNumber(request.getBarcodeNumber())
