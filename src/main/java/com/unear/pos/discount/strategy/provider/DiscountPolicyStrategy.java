@@ -1,4 +1,4 @@
-package com.unear.pos.discount.strategy;
+package com.unear.pos.discount.strategy.provider;
 
 import com.unear.pos.common.dto.enums.EventParticipationStatus;
 import com.unear.pos.common.dto.enums.MembershipGrade;

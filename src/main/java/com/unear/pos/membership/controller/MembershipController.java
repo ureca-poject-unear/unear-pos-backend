@@ -6,6 +6,7 @@ import com.unear.pos.common.response.ApiResponse;
 import com.unear.pos.member.dto.MemberInfo;
 import com.unear.pos.membership.dto.MemberVerifyRequestDto;
 import com.unear.pos.membership.service.MembershipService;
+import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -26,9 +27,10 @@ public class MembershipController {
     @PostMapping("/verify")
     public ResponseEntity<ApiResponse<MemberInfo>> verifyMember(
             @Valid @RequestBody MemberVerifyRequestDto request,
-            @CurrentPosSession PosSessionInfo posInfo) {
+            @CurrentPosSession PosSessionInfo posInfo,
+            HttpSession session) {
 
-        MemberInfo memberInfo = membershipService.verifyMember(request, posInfo);
+        MemberInfo memberInfo = membershipService.verifyMember(request, posInfo, session);
         return ResponseEntity.ok(ApiResponse.success("회원 인증 완료", memberInfo));
     }
 }

@@ -10,6 +10,7 @@ import lombok.Getter;
 @Builder
 @AllArgsConstructor
 public class DiscountPolicyInfo {
+    private Long id;
     private String discountCode;
     private Integer unitBaseAmount;
     private Integer fixedDiscount;
@@ -20,6 +21,7 @@ public class DiscountPolicyInfo {
 
     public static DiscountPolicyInfo from(GeneralDiscountPolicy policy) {
         return DiscountPolicyInfo.builder()
+                .id(policy.getId())
                 .discountCode(policy.getDiscountCode())
                 .unitBaseAmount(policy.getUnitBaseAmount())
                 .fixedDiscount(policy.getFixedDiscount())
@@ -32,6 +34,7 @@ public class DiscountPolicyInfo {
 
     public static DiscountPolicyInfo from(FranchiseDiscountPolicy policy) {
         return DiscountPolicyInfo.builder()
+                .id(policy.getId())
                 .discountCode(policy.getDiscountCode())
                 .unitBaseAmount(policy.getUnitBaseAmount())
                 .fixedDiscount(policy.getFixedDiscount())
