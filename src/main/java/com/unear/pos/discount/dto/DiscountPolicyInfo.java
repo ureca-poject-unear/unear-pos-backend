@@ -21,7 +21,6 @@ public class DiscountPolicyInfo {
     public static DiscountPolicyInfo from(GeneralDiscountPolicy policy) {
         return DiscountPolicyInfo.builder()
                 .discountCode(policy.getDiscountCode())
-                .discountCode(policy.getDiscountCode())
                 .unitBaseAmount(policy.getUnitBaseAmount())
                 .fixedDiscount(policy.getFixedDiscount())
                 .discountPercent(policy.getDiscountPercent())
