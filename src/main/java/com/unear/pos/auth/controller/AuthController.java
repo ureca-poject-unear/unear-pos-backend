@@ -24,4 +24,10 @@ public class AuthController {
 
         return ResponseEntity.ok(response);
     }
+
+    @PostMapping("/logout")
+    public ResponseEntity<ApiResponse<Void>> logout(HttpSession session) {
+        session.invalidate();
+        return ResponseEntity.ok(ApiResponse.success("로그아웃 성공"));
+    }
 }
