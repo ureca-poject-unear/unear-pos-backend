@@ -1,33 +1,38 @@
-package com.unear.pos.discount.strategy;
+package com.unear.pos.discount.strategy.provider;
 
 import com.unear.pos.common.dto.enums.DiscountCode;
 import com.unear.pos.common.dto.enums.DiscountTargetGrade;
 import com.unear.pos.common.dto.enums.EventParticipationStatus;
 import com.unear.pos.common.dto.enums.MembershipGrade;
 import com.unear.pos.discount.dto.DiscountPolicyInfo;
-import com.unear.pos.discount.entity.FranchiseDiscountPolicy;
-import com.unear.pos.discount.repository.FranchiseDiscountPolicyRepository;
+import com.unear.pos.discount.entity.GeneralDiscountPolicy;
+import com.unear.pos.discount.repository.GeneralDiscountPolicyRepository;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 @Component
-@AllArgsConstructor
-public class FranchiseDiscountPolicyStrategy implements DiscountPolicyStrategy {
+@RequiredArgsConstructor
+public class GeneralDiscountPolicyStrategy implements DiscountPolicyStrategy {
 
-    private final FranchiseDiscountPolicyRepository repository;
+    private final GeneralDiscountPolicyRepository repository;
 
     @Override
-    public List<DiscountPolicyInfo> getDiscountPolicies(MembershipGrade memberGrade, Long franchiseId,
+    public List<DiscountPolicyInfo> getDiscountPolicies(MembershipGrade memberGrade, Long placeId,
                                                         EventParticipationStatus eventStatus) {
-
-        List<FranchiseDiscountPolicy> allGradePolicies = repository.findByFranchiseIdAndMembershipCode(franchiseId,
+        /**
+         * 1. 전체 등급이 적용 가능한 쿠폰이 존재하는지 조회
+         */
+        List<GeneralDiscountPolicy> allGradePolicies = repository.findByPlaceIdAndMembershipCode(placeId,
                 DiscountTargetGrade.ALL.getCode());
 
+        /**
+         * 2. 특정 등급 정책 조회
+         */
         DiscountTargetGrade targetGrade = DiscountTargetGrade.fromMembershipGrade(memberGrade);
-        List<FranchiseDiscountPolicy> specificGradePolicies = repository.findByFranchiseIdAndMembershipCode(franchiseId,
+        List<GeneralDiscountPolicy> specificGradePolicies = repository.findByPlaceIdAndMembershipCode(placeId,
                 targetGrade.getCode());
 
         return Stream.concat(allGradePolicies.stream(), specificGradePolicies.stream())
@@ -35,4 +40,5 @@ public class FranchiseDiscountPolicyStrategy implements DiscountPolicyStrategy {
                 .map(DiscountPolicyInfo::from)
                 .collect(Collectors.toList());
     }
+
 }
