@@ -1,6 +1,7 @@
 package com.unear.pos.common.dto;
 
 import java.math.BigDecimal;
+import java.util.Objects;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
@@ -39,5 +40,27 @@ public class Money {
 
     public boolean isLessThan(Money other) {
         return this.amount.compareTo(other.amount) < 0;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null || getClass() != obj.getClass()) {
+            return false;
+        }
+        Money money = (Money) obj;
+        return this.amount.compareTo(money.amount) == 0;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(amount.stripTrailingZeros());
+    }
+
+    @Override
+    public String toString() {
+        return "Money{amount=" + amount + "}";
     }
 }
