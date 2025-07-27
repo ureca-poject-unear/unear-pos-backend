@@ -10,9 +10,9 @@ import lombok.Getter;
 public class CouponVerifyResponseDto {
     private Long userCouponId;
     private String discountCode;
-    private Long unitBaseAmount;
-    private Long fixedDiscount;
-    private Long discountPercent;
-    private Long minPurchaseAmount;
-    private Long maxDiscountAmount;
+    private Integer unitBaseAmount;
+    private Integer fixedDiscount;
+    private Integer discountPercent;
+    private Integer minPurchaseAmount;
+    private Integer maxDiscountAmount;
 }
