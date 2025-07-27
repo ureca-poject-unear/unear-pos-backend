@@ -29,4 +29,8 @@ public class MemberSessionUtil {
         MemberSession updated = current.withCouponDiscount(discount, userCouponId);
         session.setAttribute(MEMBER_SESSION_KEY, updated);
     }
+
+    public void clearMemberSession(HttpSession session) {
+        session.removeAttribute(MEMBER_SESSION_KEY);
+    }
 }
