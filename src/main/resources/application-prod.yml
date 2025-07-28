@@ -19,3 +19,7 @@ spring:
     hibernate:
       ddl-auto: update
     show-sql: false
+
+notification:
+  server:
+    url: ${NOTIFICATION_SERVER_URL}
