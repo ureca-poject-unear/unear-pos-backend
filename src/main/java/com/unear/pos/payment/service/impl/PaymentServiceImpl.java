@@ -8,16 +8,20 @@ import com.unear.pos.payment.dto.response.PaymentResponseDto;
 import com.unear.pos.payment.entity.UserHistory;
 import com.unear.pos.payment.repository.UserHistoryRepository;
 import com.unear.pos.payment.service.PaymentService;
+import com.unear.pos.stamp.service.StampService;
 import jakarta.servlet.http.HttpSession;
 import java.time.LocalDate;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 @Service
+@Slf4j
 @RequiredArgsConstructor
 public class PaymentServiceImpl implements PaymentService {
 
+    private final StampService stampService;
     private final UserHistoryRepository userHistoryRepository;
     private final MemberSessionUtil memberSessionUtil;
 
@@ -29,6 +33,12 @@ public class PaymentServiceImpl implements PaymentService {
 
         UserHistory userHistory = createUserHistory(memberSession, posInfo, request);
         UserHistory savedHistory = userHistoryRepository.save(userHistory);
+
+        try {
+            stampService.createStampAfterPayment(memberSession, posInfo);
+        } catch (Exception e) {
+            log.error("Failed to create stamp after payment", e);
+        }
 
         memberSessionUtil.clearMemberSession(session);
 
@@ -66,6 +76,7 @@ public class PaymentServiceImpl implements PaymentService {
                 .paidAt(LocalDate.now())
                 .discountCode(memberSession.getDiscountCode())
                 .membershipCode(memberSession.getMemberGrade().getCode())
+                .placeCategory(posInfo.getPlaceCategory().getCode())
                 .build();
     }
 
