@@ -9,7 +9,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "coupon_template")
+@Table(name = "coupon_templates")
 @Getter
 @NoArgsConstructor
 public class CouponTemplate {

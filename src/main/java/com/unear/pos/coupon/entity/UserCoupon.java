@@ -10,7 +10,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "user_coupon")
+@Table(name = "user_coupons")
 @Getter
 @NoArgsConstructor
 public class UserCoupon {
@@ -41,7 +41,7 @@ public class UserCoupon {
     public boolean isUsable() {
         return CouponStatus.UNUSED.getCode().equals(this.couponStatusCode);
     }
-    
+
     public void markAsUsed() {
         this.couponStatusCode = CouponStatus.USED.getCode();
         this.usedAt = LocalDateTime.now();
