@@ -7,7 +7,7 @@ spring:
     session:
       cookie:
         same-site: none
-        secure: true
+        secure: false
 
   datasource:
     url: ${DB_URL}
