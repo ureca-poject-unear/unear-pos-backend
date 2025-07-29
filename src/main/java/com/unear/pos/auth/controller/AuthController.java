@@ -2,6 +2,7 @@ package com.unear.pos.auth.controller;
 
 import com.unear.pos.auth.dto.request.LoginRequestDto;
 import com.unear.pos.auth.service.AuthService;
+import com.unear.pos.common.dto.PosSessionInfo;
 import com.unear.pos.common.response.ApiResponse;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
@@ -19,8 +20,9 @@ public class AuthController {
     private final AuthService authService;
 
     @PostMapping("/login")
-    public ResponseEntity<ApiResponse<Void>> login(@RequestBody LoginRequestDto loginRequestDto, HttpSession session) {
-        ApiResponse<Void> response = authService.login(loginRequestDto, session);
+    public ResponseEntity<ApiResponse<PosSessionInfo>> login(@RequestBody LoginRequestDto loginRequestDto,
+                                                             HttpSession session) {
+        ApiResponse<PosSessionInfo> response = authService.login(loginRequestDto, session);
 
         return ResponseEntity.ok(response);
     }

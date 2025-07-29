@@ -30,7 +30,7 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     @Transactional(readOnly = true)
-    public ApiResponse<Void> login(LoginRequestDto loginRequestDto, HttpSession session) {
+    public ApiResponse<PosSessionInfo> login(LoginRequestDto loginRequestDto, HttpSession session) {
 
         Owner owner = ownerRepository.findByOwnerName(loginRequestDto.getOwnerName())
                 .orElseThrow(() -> new OwnerNotFoundException("사용자를 찾을 수 없습니다"));
@@ -55,7 +55,7 @@ public class AuthServiceImpl implements AuthService {
 
         session.setAttribute("posSessionInfo", posSessionInfo);
 
-        return ApiResponse.success("login success");
+        return ApiResponse.success(posSessionInfo);
 
     }
 }
