@@ -17,6 +17,7 @@ import java.util.concurrent.CompletableFuture;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -29,6 +30,7 @@ public class StampServiceImpl implements StampService {
     private final ExternalNotificationClient notificationClient;
 
     @Override
+    @Transactional
     public void createStampAfterPayment(MemberSession memberSession, PosSessionInfo posInfo) {
         if (posInfo.getEventStatus() == EventParticipationStatus.NONE) {
             log.debug("Place {} is not participating in events", posInfo.getPlaceId());
