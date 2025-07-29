@@ -52,6 +52,13 @@ public class DiscountServiceImpl implements DiscountService {
 
         MemberSession memberSession = memberSessionUtil.validateAndGetMemberSession(session);
 
+        if (memberSession.getMembershipDiscount() != null) {
+            throw new IllegalStateException("이미 멤버십 할인이 적용되었습니다");
+        }
+        if (memberSession.getCouponDiscount() != null) {
+            throw new IllegalStateException("이미 쿠폰 할인이 적용되었습니다");
+        }
+
         MembershipGrade memberGrade = memberSession.getMemberGrade();
 
         List<DiscountPolicyInfo> availablePolicies = getDiscountPolicies(memberGrade, posInfo);
@@ -61,11 +68,7 @@ public class DiscountServiceImpl implements DiscountService {
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("적용할 수 없는 할인 정책입니다"));
 
-        Money purchaseAmount = Money.of(request.getPurchaseAmount());
-        if (purchaseAmount.isLessThan(Money.zero()) || purchaseAmount.equals(Money.zero())) {
-            throw new IllegalArgumentException("구매 금액은 0보다 커야합니다.");
-        }
-
+        Money purchaseAmount = Money.of(memberSession.getPurchaseAmount());
         Money discountAmount = discountCalculationService.calculateDiscount(purchaseAmount, selectedPolicy);
         Money finalAmount = purchaseAmount.subtract(discountAmount);
 
@@ -75,8 +78,8 @@ public class DiscountServiceImpl implements DiscountService {
                 .finalAmount(finalAmount.getAmount().longValue())
                 .build();
 
-        memberSessionUtil.saveMembershipDiscount(session, responseDto);
-
+        MemberSession updated = memberSession.withMembershipDiscount(responseDto);
+        memberSessionUtil.updateMemberSession(session, updated);
         return responseDto;
     }
 
@@ -84,6 +87,13 @@ public class DiscountServiceImpl implements DiscountService {
                                                         HttpSession session) {
 
         MemberSession memberSession = memberSessionUtil.validateAndGetMemberSession(session);
+
+        if (memberSession.getCouponDiscount() != null) {
+            throw new IllegalStateException("이미 쿠폰 할인이 적용되었습니다");
+        }
+        if (memberSession.getMembershipDiscount() != null) {
+            throw new IllegalStateException("이미 멤버십 할인이 적용되었습니다");
+        }
 
         UserCoupon userCoupon = userCouponRepository.findById(request.getUserCouponId())
                 .orElseThrow(() -> new IllegalArgumentException("쿠폰을 찾을 수 없습니다"));
@@ -99,7 +109,7 @@ public class DiscountServiceImpl implements DiscountService {
         DiscountPolicyInfo policy = couponService.validateCouponAndGetPolicy(template, posInfo,
                 memberSession.getMemberGrade());
 
-        Money purchaseAmount = Money.of(request.getPurchaseAmount());
+        Money purchaseAmount = Money.of(memberSession.getPurchaseAmount());
         Money discountAmount = discountCalculationService.calculateDiscount(purchaseAmount, policy);
         Money finalAmount = purchaseAmount.subtract(discountAmount);
 
@@ -109,8 +119,8 @@ public class DiscountServiceImpl implements DiscountService {
                 .finalAmount(finalAmount.getAmount().longValue())
                 .build();
 
-        memberSessionUtil.saveCouponDiscount(session, responseDto, request.getUserCouponId());
-
+        MemberSession updated = memberSession.withCouponDiscount(responseDto, request.getUserCouponId());
+        memberSessionUtil.updateMemberSession(session, updated);
         return responseDto;
     }
 
