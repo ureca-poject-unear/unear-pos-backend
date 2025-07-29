@@ -68,6 +68,6 @@ public class UserHistory {
     @Column(name = "membership_code")
     private String membershipCode;
 
-    @Column(name = "place_category") // 또는 category_code
+    @Column(name = "place_category")
     private String placeCategory;
 }
