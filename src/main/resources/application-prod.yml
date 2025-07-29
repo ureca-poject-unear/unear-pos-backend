@@ -22,4 +22,5 @@ spring:
 
 notification:
   server:
-    url: ${NOTIFICATION_SERVER_URL}
+    url: http://localhost:9090
+  #url: ${NOTIFICATION_SERVER_URL}
