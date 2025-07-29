@@ -76,6 +76,7 @@ public class PaymentServiceImpl implements PaymentService {
                 .paidAt(LocalDate.now())
                 .discountCode(memberSession.getDiscountCode())
                 .membershipCode(memberSession.getMemberGrade().getCode())
+                .placeCategory(posInfo.getPlaceCategory().getCode())
                 .build();
     }
 
