@@ -68,7 +68,7 @@ public class PaymentServiceImpl implements PaymentService {
                 .userCouponId(memberSession.getUserCouponId())
                 .placeId(posInfo.getPlaceId())
                 .usedAt(LocalDate.now())
-                .originalAmount(memberSession.getOriginalAmount().intValue())
+                .originalAmount(memberSession.getPurchaseAmount().intValue())
                 .membershipDiscountAmount(getMembershipDiscountAmount(memberSession))
                 .couponDiscountAmount(getCouponDiscountAmount(memberSession))
                 .totalDiscountAmount(memberSession.getTotalDiscountAmount().intValue())
