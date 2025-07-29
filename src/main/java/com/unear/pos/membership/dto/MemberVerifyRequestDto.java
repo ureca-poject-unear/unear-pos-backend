@@ -1,5 +1,6 @@
 package com.unear.pos.membership.dto;
 
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import lombok.AllArgsConstructor;
@@ -18,4 +19,8 @@ public class MemberVerifyRequestDto {
 
     @NotBlank(message = "검증 값은 필수입니다")
     private String value;
+
+    @NotBlank(message = "구매 금액은 필수입니다")
+    @Min(value = 1, message = "구매 금액은 1원 이상이어야 합니다")
+    private Long purchaseAmount;
 }

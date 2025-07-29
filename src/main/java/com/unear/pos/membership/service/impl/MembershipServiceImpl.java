@@ -35,7 +35,7 @@ public class MembershipServiceImpl implements MembershipService {
 
         MemberInfo memberInfo = MemberInfo.from(member);
 
-        MemberSession memberSession = MemberSession.from(memberInfo, posInfo);
+        MemberSession memberSession = MemberSession.from(memberInfo, posInfo, request.getPurchaseAmount());
         session.setAttribute("memberSession", memberSession);
 
         List<DiscountPolicyInfo> policies = discountService.getDiscountPolicies(memberInfo.getMemberGrade(), posInfo);
