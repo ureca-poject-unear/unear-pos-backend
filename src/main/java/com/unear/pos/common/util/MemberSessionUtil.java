@@ -30,6 +30,10 @@ public class MemberSessionUtil {
         session.setAttribute(MEMBER_SESSION_KEY, updated);
     }
 
+    public void updateMemberSession(HttpSession session, MemberSession updated) {
+        session.setAttribute(MEMBER_SESSION_KEY, updated);
+    }
+
     public void clearMemberSession(HttpSession session) {
         session.removeAttribute(MEMBER_SESSION_KEY);
     }

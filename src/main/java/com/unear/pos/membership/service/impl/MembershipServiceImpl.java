@@ -4,6 +4,7 @@ import com.unear.pos.common.dto.MemberSession;
 import com.unear.pos.common.dto.PosSessionInfo;
 import com.unear.pos.common.dto.enums.VerificationType;
 import com.unear.pos.common.exception.business.MemberNotFoundException;
+import com.unear.pos.common.util.MemberSessionUtil;
 import com.unear.pos.discount.dto.DiscountPolicyInfo;
 import com.unear.pos.discount.service.DiscountService;
 import com.unear.pos.member.dto.MemberInfo;
@@ -22,6 +23,7 @@ public class MembershipServiceImpl implements MembershipService {
 
     private final MemberRepository memberRepository;
     private final DiscountService discountService;
+    private final MemberSessionUtil memberSessionUtil;
 
 
     @Override
@@ -41,6 +43,16 @@ public class MembershipServiceImpl implements MembershipService {
         List<DiscountPolicyInfo> policies = discountService.getDiscountPolicies(memberInfo.getMemberGrade(), posInfo);
 
         return memberInfo.withDiscountPolicies(policies);
+    }
+
+    @Override
+    public void cancelMembershipDiscount(HttpSession session) {
+        MemberSession current = memberSessionUtil.validateAndGetMemberSession(session);
+        if (!current.hasMembershipDiscount()) {
+            throw new IllegalStateException("적용된 멤버십 할인이 없습니다");
+        }
+        MemberSession updated = current.cancelMembershipDiscount();
+        memberSessionUtil.updateMemberSession(session, updated);
     }
 
     private Member findByPhone(String value) {

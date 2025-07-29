@@ -67,4 +67,25 @@ public class MemberSession {
     public boolean hasCouponApplied() {
         return this.userCouponId != null;
     }
+
+    public boolean hasMembershipDiscount() {
+        return this.membershipDiscount != null;
+    }
+
+    public MemberSession cancelMembershipDiscount() {
+        return this.toBuilder()
+                .membershipDiscount(null)
+                .totalDiscountAmount(calculateTotal(null, this.couponDiscount))
+                .discountCode(this.couponDiscount != null ? this.couponDiscount.getDiscountCode() : null)
+                .build();
+    }
+
+    public MemberSession cancelCouponDiscount() {
+        return this.toBuilder()
+                .couponDiscount(null)
+                .userCouponId(null)
+                .totalDiscountAmount(calculateTotal(this.membershipDiscount, null))
+                .discountCode(this.membershipDiscount != null ? this.membershipDiscount.getDiscountCode() : null)
+                .build();
+    }
 }

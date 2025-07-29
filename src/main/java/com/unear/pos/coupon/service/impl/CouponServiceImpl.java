@@ -81,6 +81,15 @@ public class CouponServiceImpl implements CouponService {
         return validateStoreMatchAndGetPolicy(template, posInfo, templatePlaceType);
     }
 
+    public void cancelCouponDiscount(HttpSession session) {
+        MemberSession current = memberSessionUtil.validateAndGetMemberSession(session);
+        if (!current.hasCouponApplied()) {
+            throw new IllegalStateException("적용된 쿠폰이 없습니다");
+        }
+        MemberSession updated = current.cancelCouponDiscount();
+        memberSessionUtil.updateMemberSession(session, updated);
+    }
+
     private DiscountPolicyInfo validateStoreMatchAndGetPolicy(CouponTemplate template, PosSessionInfo posInfo,
                                                               PlaceType templatePlaceType) {
         if (templatePlaceType.isGeneralPolicy()) {

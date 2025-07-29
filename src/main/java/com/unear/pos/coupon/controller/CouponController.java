@@ -46,4 +46,12 @@ public class CouponController {
 
         return ResponseEntity.ok(ApiResponse.success("쿠폰 할인 적용 완료", response));
     }
+
+    @PostMapping("/cancel")
+    public ResponseEntity<ApiResponse<Void>> cancelCouponDiscount(
+            @CurrentPosSession PosSessionInfo posInfo,
+            HttpSession session) {
+        couponService.cancelCouponDiscount(session);
+        return ResponseEntity.ok(ApiResponse.success("쿠폰 할인이 취소되었습니다"));
+    }
 }
