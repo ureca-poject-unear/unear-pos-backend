@@ -21,7 +21,7 @@ public class MemberSession {
     private Long totalDiscountAmount;
     private Long originalAmount;
 
-    private Long userCouponId;   // 추가된 필드
+    private Long userCouponId;
     private String discountCode;
 
     public static MemberSession from(MemberInfo memberInfo, PosSessionInfo posInfo) {
@@ -70,5 +70,9 @@ public class MemberSession {
             total += coupon.getDiscountAmount();
         }
         return total;
+    }
+
+    public boolean hasCouponApplied() {
+        return this.userCouponId != null;
     }
 }

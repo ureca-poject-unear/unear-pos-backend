@@ -3,6 +3,8 @@ package com.unear.pos.payment.service.impl;
 import com.unear.pos.common.dto.MemberSession;
 import com.unear.pos.common.dto.PosSessionInfo;
 import com.unear.pos.common.util.MemberSessionUtil;
+import com.unear.pos.coupon.entity.UserCoupon;
+import com.unear.pos.coupon.repository.UserCouponRepository;
 import com.unear.pos.payment.dto.request.PaymentRequestDto;
 import com.unear.pos.payment.dto.response.PaymentResponseDto;
 import com.unear.pos.payment.entity.UserHistory;
@@ -15,6 +17,7 @@ import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @Slf4j
@@ -23,9 +26,11 @@ public class PaymentServiceImpl implements PaymentService {
 
     private final StampService stampService;
     private final UserHistoryRepository userHistoryRepository;
+    private final UserCouponRepository userCouponRepository;
     private final MemberSessionUtil memberSessionUtil;
 
     @Override
+    @Transactional
     public PaymentResponseDto processPayment(PaymentRequestDto request, HttpSession session, PosSessionInfo posInfo) {
         MemberSession memberSession = memberSessionUtil.validateAndGetMemberSession(session);
 
@@ -34,11 +39,8 @@ public class PaymentServiceImpl implements PaymentService {
         UserHistory userHistory = createUserHistory(memberSession, posInfo, request);
         UserHistory savedHistory = userHistoryRepository.save(userHistory);
 
-        try {
-            stampService.createStampAfterPayment(memberSession, posInfo);
-        } catch (Exception e) {
-            log.error("Failed to create stamp after payment", e);
-        }
+        processCouponAfterPayment(memberSession);
+        stampService.createStampAfterPayment(memberSession, posInfo);
 
         memberSessionUtil.clearMemberSession(session);
 
@@ -111,5 +113,15 @@ public class PaymentServiceImpl implements PaymentService {
     public List<UserHistory> getPlacePaymentHistory(Long placeId) {
         return userHistoryRepository.findByPlaceIdOrderByPaidAtDesc(placeId);
 
+    }
+
+    private void processCouponAfterPayment(MemberSession memberSession) {
+        if (memberSession.hasCouponApplied()) {
+            UserCoupon userCoupon = userCouponRepository.findById(memberSession.getUserCouponId())
+                    .orElseThrow(() -> new IllegalArgumentException("쿠폰을 찾을 수 없습니다"));
+
+            userCoupon.markAsUsed();
+            userCouponRepository.save(userCoupon);
+        }
     }
 }

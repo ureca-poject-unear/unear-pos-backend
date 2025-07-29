@@ -103,9 +103,6 @@ public class DiscountServiceImpl implements DiscountService {
         Money discountAmount = discountCalculationService.calculateDiscount(purchaseAmount, policy);
         Money finalAmount = purchaseAmount.subtract(discountAmount);
 
-        userCoupon.markAsUsed();
-        userCouponRepository.save(userCoupon);
-
         DiscountApplyResponseDto responseDto = DiscountApplyResponseDto.builder()
                 .discountCode(policy.getDiscountCode())
                 .discountAmount(discountAmount.getAmount().longValue())
