@@ -49,4 +49,11 @@ public class MembershipController {
 
         return ResponseEntity.ok(ApiResponse.success("할인 적용 완료", response));
     }
+
+    @PostMapping("/cancel")
+    public ResponseEntity<ApiResponse<Void>> cancelMembershipDiscount(@CurrentPosSession PosSessionInfo posInfo,
+                                                                      HttpSession session) {
+        membershipService.cancelMembershipDiscount(session);
+        return ResponseEntity.ok(ApiResponse.success("멤버십 할인이 취소되었습니다"));
+    }
 }

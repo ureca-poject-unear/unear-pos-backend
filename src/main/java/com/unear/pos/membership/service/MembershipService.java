@@ -7,4 +7,6 @@ import jakarta.servlet.http.HttpSession;
 
 public interface MembershipService {
     MemberInfo verifyMember(MemberVerifyRequestDto request, PosSessionInfo posInfo, HttpSession session);
+
+    void cancelMembershipDiscount(HttpSession session);
 }

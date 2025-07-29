@@ -49,11 +49,11 @@ public class PaymentServiceImpl implements PaymentService {
     }
 
     private void validatePaymentAmount(Long paymentAmount, MemberSession memberSession) {
-        if (memberSession.getOriginalAmount() == null) {
-            throw new IllegalStateException("할인 적용 후 결제가 가능합니다");
+        if (memberSession.getPurchaseAmount() == null) {
+            throw new IllegalStateException("구매 금액이 설정되지 않았습니다");
         }
 
-        Long expectedAmount = memberSession.getOriginalAmount() - memberSession.getTotalDiscountAmount();
+        Long expectedAmount = memberSession.getPurchaseAmount() - memberSession.getTotalDiscountAmount();
         if (!paymentAmount.equals(expectedAmount)) {
             throw new IllegalArgumentException(
                     String.format("결제 금액이 일치하지 않습니다. 예상: %d, 요청: %d", expectedAmount, paymentAmount)
@@ -68,7 +68,7 @@ public class PaymentServiceImpl implements PaymentService {
                 .userCouponId(memberSession.getUserCouponId())
                 .placeId(posInfo.getPlaceId())
                 .usedAt(LocalDate.now())
-                .originalAmount(memberSession.getOriginalAmount().intValue())
+                .originalAmount(memberSession.getPurchaseAmount().intValue())
                 .membershipDiscountAmount(getMembershipDiscountAmount(memberSession))
                 .couponDiscountAmount(getCouponDiscountAmount(memberSession))
                 .totalDiscountAmount(memberSession.getTotalDiscountAmount().intValue())

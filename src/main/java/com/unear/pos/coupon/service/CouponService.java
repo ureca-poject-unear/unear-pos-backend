@@ -14,4 +14,6 @@ public interface CouponService {
 
     DiscountPolicyInfo validateCouponAndGetPolicy(CouponTemplate template, PosSessionInfo posInfo,
                                                   MembershipGrade memberGrade);
+
+    void cancelCouponDiscount(HttpSession session);
 }

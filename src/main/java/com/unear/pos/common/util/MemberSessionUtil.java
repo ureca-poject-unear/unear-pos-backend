@@ -1,7 +1,6 @@
 package com.unear.pos.common.util;
 
 import com.unear.pos.common.dto.MemberSession;
-import com.unear.pos.discount.dto.response.DiscountApplyResponseDto;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.stereotype.Component;
 
@@ -18,15 +17,7 @@ public class MemberSessionUtil {
         return memberSession;
     }
 
-    public void saveMembershipDiscount(HttpSession session, DiscountApplyResponseDto discount) {
-        MemberSession current = validateAndGetMemberSession(session);
-        MemberSession updated = current.withMembershipDiscount(discount);
-        session.setAttribute(MEMBER_SESSION_KEY, updated);
-    }
-
-    public void saveCouponDiscount(HttpSession session, DiscountApplyResponseDto discount, Long userCouponId) {
-        MemberSession current = validateAndGetMemberSession(session);
-        MemberSession updated = current.withCouponDiscount(discount, userCouponId);
+    public void updateMemberSession(HttpSession session, MemberSession updated) {
         session.setAttribute(MEMBER_SESSION_KEY, updated);
     }
 
