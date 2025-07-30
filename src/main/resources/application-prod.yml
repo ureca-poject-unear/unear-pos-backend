@@ -26,6 +26,6 @@ spring:
       ddl-auto: update
     show-sql: false
 
-notification:
-  server:
-    url: http://localhost:9090
+internal:
+  key: ${INTERNAL_KEY}
+  user-service-url: ${USER_SERVICE_URL}
