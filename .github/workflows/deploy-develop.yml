@@ -43,6 +43,9 @@ jobs:
             echo "DB_USER=${{ secrets.DB_USER }}" >> .env
             echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> .env
 
+            echo "INTERNAL_KEY=${{ secrets.INTERNAL_KEY }}" >> .env
+            echo "USER_SERVICE_URL=${{ secrets.USER_SERVICE_URL }}" >> .env
+
             docker pull 1seyoung/unear-pos:develop
             docker-compose stop pos-server
             docker-compose rm -f pos-server
