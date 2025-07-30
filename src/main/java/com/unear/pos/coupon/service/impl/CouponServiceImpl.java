@@ -4,6 +4,11 @@ import com.unear.pos.common.dto.MemberSession;
 import com.unear.pos.common.dto.PosSessionInfo;
 import com.unear.pos.common.dto.enums.MembershipGrade;
 import com.unear.pos.common.dto.enums.PlaceType;
+import com.unear.pos.common.exception.ErrorCode;
+import com.unear.pos.common.exception.business.CouponNotFoundException;
+import com.unear.pos.common.exception.business.CouponNotUsableException;
+import com.unear.pos.common.exception.business.CouponTemplateNotFoundException;
+import com.unear.pos.common.exception.business.DiscountPolicyException;
 import com.unear.pos.common.util.MemberSessionUtil;
 import com.unear.pos.coupon.dto.request.CouponVerifyRequestDto;
 import com.unear.pos.coupon.dto.response.CouponVerifyResponseDto;
@@ -39,14 +44,14 @@ public class CouponServiceImpl implements CouponService {
 
         UserCoupon userCoupon = userCouponRepository
                 .findByBarcodeNumber(request.getBarcodeNumber())
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 쿠폰입니다"));
+                .orElseThrow(() -> new CouponNotFoundException("존재하지 않는 쿠폰입니다"));
 
         if (!userCoupon.isOwnedBy(memberSession.getMemberId()) || !userCoupon.isUsable()) {
-            throw new IllegalArgumentException("사용할 수 없는 쿠폰입니다");
+            throw new CouponNotUsableException("사용할 수 없는 쿠폰입니다");
         }
 
         CouponTemplate template = couponTemplateRepository.findById(userCoupon.getCouponTemplateId())
-                .orElseThrow(() -> new IllegalArgumentException("쿠폰 정보를 찾을 수 없습니다"));
+                .orElseThrow(() -> new CouponTemplateNotFoundException("쿠폰 정보를 찾을 수 없습니다"));
 
         DiscountPolicyInfo policy = validateCouponAndGetPolicy(template, posInfo, memberSession.getMemberGrade());
 
@@ -66,15 +71,15 @@ public class CouponServiceImpl implements CouponService {
                                                          MembershipGrade memberGrade) {
 
         if (template.isExpired()) {
-            throw new IllegalArgumentException("유효기간이 만료된 쿠폰입니다");
+            throw new CouponNotUsableException("유효기간이 만료된 쿠폰입니다");
         }
 
         if (!template.isAvailable()) {
-            throw new IllegalArgumentException("사용할 수 없는 쿠폰입니다");
+            throw new CouponNotUsableException("사용할 수 없는 쿠폰입니다");
         }
 
         if (!isValidMembershipGrade(template.getMembershipCode(), memberGrade)) {
-            throw new IllegalArgumentException("회원 등급이 맞지 않는 쿠폰입니다");
+            throw new CouponNotUsableException("회원 등급이 맞지 않는 쿠폰입니다");
         }
 
         PlaceType templatePlaceType = PlaceType.valueOf(template.getMarkerCode());
@@ -84,7 +89,7 @@ public class CouponServiceImpl implements CouponService {
     public void cancelCouponDiscount(HttpSession session) {
         MemberSession current = memberSessionUtil.validateAndGetMemberSession(session);
         if (!current.hasCouponApplied()) {
-            throw new IllegalStateException("적용된 쿠폰이 없습니다");
+            throw new CouponNotFoundException("적용된 쿠폰이 없습니다");
         }
         MemberSession updated = current.cancelCouponDiscount();
         memberSessionUtil.updateMemberSession(session, updated);
@@ -95,10 +100,12 @@ public class CouponServiceImpl implements CouponService {
         if (templatePlaceType.isGeneralPolicy()) {
             GeneralDiscountPolicy generalPolicy = generalDiscountPolicyRepository.findById(
                             template.getDiscountPolicyDetailId())
-                    .orElseThrow(() -> new IllegalArgumentException("할인 정책을 찾을 수 없습니다"));
+                    .orElseThrow(() -> new DiscountPolicyException(
+                            ErrorCode.DISCOUNT_POLICY_NOT_FOUND, "할인 정책을 찾을 수 없습니다"));
 
             if (!generalPolicy.getPlaceId().equals(posInfo.getPlaceId())) {
-                throw new IllegalArgumentException("이 가게에서 사용할 수 없는 쿠폰입니다");
+                throw new DiscountPolicyException(
+                        ErrorCode.DISCOUNT_POLICY_INVALID_STORE, "이 가게에서 사용할 수 없는 쿠폰입니다");
             }
 
             return DiscountPolicyInfo.from(generalPolicy);
@@ -106,16 +113,19 @@ public class CouponServiceImpl implements CouponService {
         } else if (templatePlaceType.isFranchisePolicy()) {
             FranchiseDiscountPolicy franchisePolicy = franchiseDiscountPolicyRepository.findById(
                             template.getDiscountPolicyDetailId())
-                    .orElseThrow(() -> new IllegalArgumentException("할인 정책을 찾을 수 없습니다"));
+                    .orElseThrow(() -> new DiscountPolicyException(
+                            ErrorCode.DISCOUNT_POLICY_NOT_FOUND, "할인 정책을 찾을 수 없습니다"));
 
             if (!franchisePolicy.getFranchiseId().equals(posInfo.getFranchiseId())) {
-                throw new IllegalArgumentException("이 프랜차이즈에서 사용할 수 없는 쿠폰입니다");
+                throw new DiscountPolicyException(
+                        ErrorCode.DISCOUNT_POLICY_INVALID_FRANCHISE, "이 프랜차이즈에서 사용할 수 없는 쿠폰입니다");
             }
 
             return DiscountPolicyInfo.from(franchisePolicy);
         }
 
-        throw new IllegalArgumentException("적용할 수 없는 할인 정책입니다");
+        throw new DiscountPolicyException(
+                ErrorCode.DISCOUNT_POLICY_NOT_APPLICABLE, "적용할 수 없는 할인 정책입니다");
     }
 
 

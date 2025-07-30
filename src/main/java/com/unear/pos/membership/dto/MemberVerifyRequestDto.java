@@ -25,3 +25,4 @@ public class MemberVerifyRequestDto {
     @Min(value = 1, message = "구매 금액은 1원 이상이어야 합니다")
     private Long purchaseAmount;
 }
+
