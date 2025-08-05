@@ -3,6 +3,7 @@ package com.unear.pos.stamp.service.impl;
 import com.unear.pos.common.dto.MemberSession;
 import com.unear.pos.common.dto.PosSessionInfo;
 import com.unear.pos.common.dto.enums.EventParticipationStatus;
+import com.unear.pos.notification.service.NotificationService;
 import com.unear.pos.stamp.entity.EventPlace;
 import com.unear.pos.stamp.entity.Stamp;
 import com.unear.pos.stamp.entity.UnearEvent;
@@ -24,6 +25,7 @@ public class StampServiceImpl implements StampService {
     private final StampRepository stampRepository;
     private final EventPlaceRepository eventPlaceRepository;
     private final UnearEventRepository unearEventRepository;
+    private final NotificationService notificationService;
 
     @Override
     @Transactional
@@ -51,9 +53,46 @@ public class StampServiceImpl implements StampService {
                 .stampedAt(LocalDateTime.now())
                 .eventCode(posInfo.getEventStatus().getCode())
                 .placeName(posInfo.getPlaceName())
+                .unearEventId(activeEvent.getUnearEventId())
                 .build();
 
         Stamp savedStamp = stampRepository.save(stamp);
         log.info("Stamp created: {}", savedStamp.getStampId());
+
+        int currentStampCount = stampRepository.countByUserIdAndUnearEventId(
+                memberSession.getMemberId(),
+                activeEvent.getUnearEventId()
+        );
+
+        sendStampNotifications(memberSession.getMemberId(), posInfo, activeEvent, currentStampCount);
+
+    }
+
+    private void sendStampNotifications(Long userId, PosSessionInfo posInfo, UnearEvent activeEvent,
+                                        int currentStampCount) {
+        try {
+            if (currentStampCount < 4) {
+
+                notificationService.sendStampAddedNotification(
+                        userId,
+                        posInfo.getPlaceId(),
+                        posInfo.getPlaceName(),
+                        currentStampCount,
+                        4
+                );
+            } else if (currentStampCount == 4) {
+
+                notificationService.sendStampCompletedNotification(
+                        userId,
+                        posInfo.getPlaceId(),
+                        posInfo.getPlaceName(),
+                        posInfo.getEventStatus().getCode(),
+                        activeEvent.getEventName()
+                );
+            }
+
+        } catch (Exception e) {
+            log.error("스탬프 알림 발송 중 오류 발생: {}", e.getMessage(), e);
+        }
     }
 }
