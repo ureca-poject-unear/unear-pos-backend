@@ -42,7 +42,8 @@ jobs:
             echo "DB_URL=${{ secrets.DB_URL }}" >> .env
             echo "DB_USER=${{ secrets.DB_USER }}" >> .env
             echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> .env
-
+            echo "REDIS_HOST=${{ secrets.REDIS_HOST }}" >> .env
+            echo "REDIS_PORT=${{ secrets.REDIS_PORT }}" >> .env
             echo "INTERNAL_KEY=${{ secrets.INTERNAL_KEY }}" >> .env
             echo "USER_SERVICE_URL=${{ secrets.USER_SERVICE_URL }}" >> .env
 
