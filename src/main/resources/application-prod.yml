@@ -26,6 +26,7 @@ spring:
       ddl-auto: update
     show-sql: false
 
-notification:
-  server:
-    url: http://localhost:9090
+  data:
+    redis:
+      url: rediss://${REDIS_HOST}:${REDIS_PORT}
+
