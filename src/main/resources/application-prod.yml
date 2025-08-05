@@ -27,12 +27,12 @@ spring:
     show-sql: false
 
 
-internal:
-  key: ${INTERNAL_KEY}
-  user-service-url: ${USER_SERVICE_URL}
 
   data:
     redis:
       url: rediss://${REDIS_HOST}:${REDIS_PORT}
 
+internal:
+  key: ${INTERNAL_KEY}
+  user-service-url: ${USER_SERVICE_URL}
 
