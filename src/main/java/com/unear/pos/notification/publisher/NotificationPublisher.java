@@ -63,6 +63,8 @@ public class NotificationPublisher {
             map.put("finalAmount", String.valueOf(request.getFinalAmount()));
         }
 
+        log.info("🔥 전송할 맵 데이터: {}", map);
+
         return map;
     }
 }
