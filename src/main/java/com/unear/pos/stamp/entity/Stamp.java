@@ -40,4 +40,7 @@ public class Stamp {
 
     @Column(name = "place_name", nullable = false)
     private String placeName;
+
+    @Column(name = "unear_event_id")
+    private Long unearEventId;
 }

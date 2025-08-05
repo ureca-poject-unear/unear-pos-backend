@@ -2,8 +2,8 @@ package com.unear.pos.notification.service.impl;
 
 import com.unear.pos.common.dto.MemberSession;
 import com.unear.pos.common.dto.PosSessionInfo;
-import com.unear.pos.notification.client.NotificationClient;
 import com.unear.pos.notification.dto.PosNotificationEventRequest;
+import com.unear.pos.notification.publisher.NotificationPublisher;
 import com.unear.pos.notification.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -12,7 +12,7 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class NotificationServiceImpl implements NotificationService {
 
-    private final NotificationClient notificationClient;
+    private final NotificationPublisher notificationPublisher;
 
     @Override
     public void sendPaymentSuccessNotification(MemberSession session, PosSessionInfo posInfo, Long paymentAmount) {
@@ -24,7 +24,8 @@ public class NotificationServiceImpl implements NotificationService {
                 session.getTotalDiscountAmount(),
                 paymentAmount
         );
-        notificationClient.sendNotification(request);
+        notificationPublisher.publishNotification(request);
+
     }
 
     @Override
@@ -36,7 +37,8 @@ public class NotificationServiceImpl implements NotificationService {
                 placeName,
                 String.format("스탬프를 모두 모았습니다", placeName)
         );
-        notificationClient.sendNotification(request);
+        notificationPublisher.publishNotification(request);
+
     }
 
     @Override
@@ -46,10 +48,11 @@ public class NotificationServiceImpl implements NotificationService {
                 userId,
                 placeId,
                 placeName,
-                String.format("🎉 %s에서 스탬프를 획득했습니다! (%d/%d)", placeName, currentStampCount, requiredStampCount),
+                String.format(" %s에서 스탬프를 획득했습니다! (%d/%d)", placeName, currentStampCount, requiredStampCount),
                 requiredStampCount
         );
-        notificationClient.sendNotification(request);
+        notificationPublisher.publishNotification(request);
+
     }
 
 
