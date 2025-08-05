@@ -5,6 +5,7 @@ import com.unear.pos.common.dto.PosSessionInfo;
 import com.unear.pos.common.util.MemberSessionUtil;
 import com.unear.pos.coupon.entity.UserCoupon;
 import com.unear.pos.coupon.repository.UserCouponRepository;
+import com.unear.pos.notification.service.NotificationService;
 import com.unear.pos.payment.dto.request.PaymentRequestDto;
 import com.unear.pos.payment.dto.response.PaymentResponseDto;
 import com.unear.pos.payment.entity.UserHistory;
@@ -28,6 +29,7 @@ public class PaymentServiceImpl implements PaymentService {
     private final UserHistoryRepository userHistoryRepository;
     private final UserCouponRepository userCouponRepository;
     private final MemberSessionUtil memberSessionUtil;
+    private final NotificationService notificationService;
 
     @Override
     @Transactional
@@ -40,6 +42,13 @@ public class PaymentServiceImpl implements PaymentService {
         UserHistory savedHistory = userHistoryRepository.save(userHistory);
 
         processCouponAfterPayment(memberSession);
+
+        notificationService.sendPaymentSuccessNotification(
+                memberSession,
+                posInfo,
+                request.getPaymentAmount()
+        );
+
         stampService.createStampAfterPayment(memberSession, posInfo);
 
         memberSessionUtil.clearMemberSession(session);
