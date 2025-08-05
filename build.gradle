@@ -42,7 +42,6 @@ dependencies {
     testImplementation 'org.junit.jupiter:junit-jupiter:5.10.0'
     implementation 'org.springframework.boot:spring-boot-starter-data-redis'
 
-    implementation 'org.apache.httpcomponents:httpclient'
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
 }
