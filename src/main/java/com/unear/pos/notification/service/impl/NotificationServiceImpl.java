@@ -20,7 +20,7 @@ public class NotificationServiceImpl implements NotificationService {
                 session.getMemberId(),
                 posInfo.getPlaceId(),
                 posInfo.getPlaceName(),
-                String.format(" %s 결제가 완료되었습니다", posInfo.getPlaceName()),
+                String.format(" %s 결제가 완료되었습니다", posInfo.getPlaceName()), // ->
                 session.getTotalDiscountAmount(),
                 paymentAmount
         );

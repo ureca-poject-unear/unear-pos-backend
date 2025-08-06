@@ -8,7 +8,8 @@ import lombok.Getter;
 public enum PlaceType {
     BASIC("BASIC"),
     LOCAL("LOCAL"),
-    FRANCHISE("FRANCHISE");
+    FRANCHISE("FRANCHISE"),
+    POPUP("POPUP");
 
     private final String code;
 
