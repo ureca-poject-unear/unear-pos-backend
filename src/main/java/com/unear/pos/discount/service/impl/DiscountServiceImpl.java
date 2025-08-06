@@ -41,12 +41,11 @@ public class DiscountServiceImpl implements DiscountService {
 
     @Override
     public List<DiscountPolicyInfo> getDiscountPolicies(MembershipGrade memberGrade, PosSessionInfo posInfo) {
-        DiscountPolicyStrategy strategy = selectStrategy(posInfo.getPlaceType());
-
         if (posInfo.getPlaceType() == PlaceType.POPUP) {
             return Collections.emptyList();
         }
 
+        DiscountPolicyStrategy strategy = selectStrategy(posInfo.getPlaceType());
         Long targetId = getTargetId(posInfo, posInfo.getPlaceType());
 
         return strategy.getDiscountPolicies(memberGrade, targetId, posInfo.getEventStatus());
