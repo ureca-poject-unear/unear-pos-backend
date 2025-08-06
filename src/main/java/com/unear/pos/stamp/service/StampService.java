@@ -5,5 +5,5 @@ import com.unear.pos.common.dto.PosSessionInfo;
 
 public interface StampService {
 
-    void createStampAfterPayment(MemberSession memberSession, PosSessionInfo posInfo);
+    String createStampAfterPayment(MemberSession memberSession, PosSessionInfo posInfo);
 }

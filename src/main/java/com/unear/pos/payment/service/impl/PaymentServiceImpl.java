@@ -43,13 +43,15 @@ public class PaymentServiceImpl implements PaymentService {
 
         processCouponAfterPayment(memberSession);
 
+        String stampMessage = stampService.createStampAfterPayment(memberSession,
+                posInfo);
+
         notificationService.sendPaymentSuccessNotification(
                 memberSession,
                 posInfo,
-                request.getPaymentAmount()
+                request.getPaymentAmount(),
+                stampMessage
         );
-
-        stampService.createStampAfterPayment(memberSession, posInfo);
 
         memberSessionUtil.clearMemberSession(session);
 

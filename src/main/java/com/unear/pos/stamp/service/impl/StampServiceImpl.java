@@ -3,7 +3,6 @@ package com.unear.pos.stamp.service.impl;
 import com.unear.pos.common.dto.MemberSession;
 import com.unear.pos.common.dto.PosSessionInfo;
 import com.unear.pos.common.dto.enums.EventParticipationStatus;
-import com.unear.pos.notification.service.NotificationService;
 import com.unear.pos.stamp.entity.EventPlace;
 import com.unear.pos.stamp.entity.Stamp;
 import com.unear.pos.stamp.entity.UnearEvent;
@@ -22,17 +21,18 @@ import org.springframework.transaction.annotation.Transactional;
 @Slf4j
 public class StampServiceImpl implements StampService {
 
+    private static final int REQUIRED_STAMP_COUNT = 4;
+
     private final StampRepository stampRepository;
     private final EventPlaceRepository eventPlaceRepository;
     private final UnearEventRepository unearEventRepository;
-    private final NotificationService notificationService;
 
     @Override
     @Transactional
-    public void createStampAfterPayment(MemberSession memberSession, PosSessionInfo posInfo) {
+    public String createStampAfterPayment(MemberSession memberSession, PosSessionInfo posInfo) {
         if (posInfo.getEventStatus() == EventParticipationStatus.NONE) {
             log.debug("Place {} is not participating in events", posInfo.getPlaceId());
-            return;
+            return "";
         }
 
         EventPlace eventPlace = eventPlaceRepository.findByPlaceId(posInfo.getPlaceId())
@@ -41,7 +41,7 @@ public class StampServiceImpl implements StampService {
         if (stampRepository.existsByUserIdAndEventPlaceId(memberSession.getMemberId(), eventPlace.getEventPlaceId())) {
             log.info("Stamp already exists for user {} at event place {}",
                     memberSession.getMemberId(), eventPlace.getEventPlaceId());
-            return;
+            return "";
         }
 
         UnearEvent activeEvent = unearEventRepository.findActiveEvent()
@@ -64,35 +64,8 @@ public class StampServiceImpl implements StampService {
                 activeEvent.getUnearEventId()
         );
 
-        sendStampNotifications(memberSession.getMemberId(), posInfo, activeEvent, currentStampCount);
+        return String.format("스탬프 적립 완료 (%d/%d)", currentStampCount, REQUIRED_STAMP_COUNT);
 
     }
 
-    private void sendStampNotifications(Long userId, PosSessionInfo posInfo, UnearEvent activeEvent,
-                                        int currentStampCount) {
-        try {
-            if (currentStampCount < 4) {
-
-                notificationService.sendStampAddedNotification(
-                        userId,
-                        posInfo.getPlaceId(),
-                        posInfo.getPlaceName(),
-                        currentStampCount,
-                        4
-                );
-            } else if (currentStampCount == 4) {
-
-                notificationService.sendStampCompletedNotification(
-                        userId,
-                        posInfo.getPlaceId(),
-                        posInfo.getPlaceName(),
-                        posInfo.getEventStatus().getCode(),
-                        activeEvent.getEventName()
-                );
-            }
-
-        } catch (Exception e) {
-            log.error("스탬프 알림 발송 중 오류 발생: {}", e.getMessage(), e);
-        }
-    }
 }

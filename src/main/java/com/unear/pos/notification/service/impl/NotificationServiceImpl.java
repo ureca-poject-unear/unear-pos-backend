@@ -15,12 +15,13 @@ public class NotificationServiceImpl implements NotificationService {
     private final NotificationPublisher notificationPublisher;
 
     @Override
-    public void sendPaymentSuccessNotification(MemberSession session, PosSessionInfo posInfo, Long paymentAmount) {
+    public void sendPaymentSuccessNotification(MemberSession session, PosSessionInfo posInfo, Long paymentAmount,
+                                               String stampMessage) {
         PosNotificationEventRequest request = PosNotificationEventRequest.fromPaymentSuccess(
                 session.getMemberId(),
                 posInfo.getPlaceId(),
                 posInfo.getPlaceName(),
-                String.format(" %s 결제가 완료되었습니다", posInfo.getPlaceName()), // ->
+                stampMessage,
                 session.getTotalDiscountAmount(),
                 paymentAmount
         );
