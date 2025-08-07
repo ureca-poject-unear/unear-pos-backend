@@ -47,6 +47,15 @@ public class StampServiceImpl implements StampService {
         UnearEvent activeEvent = unearEventRepository.findActiveEvent()
                 .orElseThrow(() -> new IllegalStateException("진행중인 이벤트를 찾을 수 없습니다"));
 
+        int currentStampCount = stampRepository.countByUserIdAndUnearEventId(
+                memberSession.getMemberId(),
+                activeEvent.getUnearEventId()
+        );
+
+        if (currentStampCount == REQUIRED_STAMP_COUNT) {
+            return "";
+        }
+
         Stamp stamp = Stamp.builder()
                 .userId(memberSession.getMemberId())
                 .eventPlaceId(eventPlace.getEventPlaceId())
@@ -57,12 +66,8 @@ public class StampServiceImpl implements StampService {
                 .build();
 
         Stamp savedStamp = stampRepository.save(stamp);
-        log.info("Stamp created: {}", savedStamp.getStampId());
 
-        int currentStampCount = stampRepository.countByUserIdAndUnearEventId(
-                memberSession.getMemberId(),
-                activeEvent.getUnearEventId()
-        );
+        log.info("Stamp created: {}", savedStamp.getStampId());
 
         return String.format("스탬프 적립 완료 (%d/%d)", currentStampCount, REQUIRED_STAMP_COUNT);
 
