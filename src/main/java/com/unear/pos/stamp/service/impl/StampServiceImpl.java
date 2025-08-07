@@ -69,7 +69,7 @@ public class StampServiceImpl implements StampService {
 
         log.info("Stamp created: {}", savedStamp.getStampId());
 
-        return String.format("스탬프 적립 완료 (%d/%d)", currentStampCount, REQUIRED_STAMP_COUNT);
+        return String.format("스탬프 적립 완료 (%d/%d)", currentStampCount + 1, REQUIRED_STAMP_COUNT);
 
     }
 
